@@ -1,0 +1,11 @@
+[package]
+name = "staratlas-player-profile"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+no-entrypoint = []
+
+[dependencies]
+anchor-gen = { workspace = true }
+anchor-lang = { workspace = true }

@@ -1,0 +1,11 @@
+{
+  "name": "staratlas-programs",
+  "private": true,
+  "devDependencies": {
+    "@staratlas/sage": "^1.8.5",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
