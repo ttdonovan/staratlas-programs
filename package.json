@@ -2,6 +2,7 @@
   "name": "staratlas-programs",
   "private": true,
   "devDependencies": {
+    "@anthropic-ai/claude-code": "^0.2.9",
     "@staratlas/sage": "^1.8.5",
     "@types/bun": "latest"
   },

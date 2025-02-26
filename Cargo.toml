@@ -16,7 +16,9 @@ anchor-lang = "0.30.1"
 [dev-dependencies]
 anchor-lang = "0.30.1"
 litesvm = { git = "https://github.com/LiteSVM/litesvm", rev = "7e3d9a8" }
+# litesvm-token = { git = "https://github.com/LiteSVM/litesvm", rev = "7e3d9a8" }
 solana-sdk = "2.2.1"
+staratlas-cargo = { path = "programs/cargo", features = ["no-entrypoint"] }
 staratlas-player-profile = { path = "programs/player-profile", features = ["no-entrypoint"] }
 staratlas-profile-faction = { path = "programs/profile-faction", features = ["no-entrypoint"] }
 staratlas-sage = { path = "programs/sage", features = ["no-entrypoint"] }
