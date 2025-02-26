@@ -18,6 +18,9 @@ anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
 litesvm = "0.6"
 # litesvm-token = { git = "https://github.com/LiteSVM/litesvm", rev = "7e3d9a8" }
 solana-sdk = "2.2.1"
+solana-program-pack = "2.2.1"
+spl-associated-token-account-client = "2.0.0"
+spl-token = "7.0.0"
 staratlas-cargo = { path = "programs/cargo", features = ["no-entrypoint"] }
 staratlas-player-profile = { path = "programs/player-profile", features = ["no-entrypoint"] }
 staratlas-profile-faction = { path = "programs/profile-faction", features = ["no-entrypoint"] }

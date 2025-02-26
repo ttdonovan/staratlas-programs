@@ -1,14 +1,22 @@
 use anchor_lang::{prelude::Pubkey as AnchorPubkey, AccountDeserialize, InstructionData};
 use litesvm::LiteSVM;
+use solana_program_pack::Pack;
 use solana_sdk::{
+    account::Account,
     feature_set::FeatureSet,
     instruction::{AccountMeta, Instruction},
     message::Message,
+    program_option::COption,
     pubkey,
     pubkey::Pubkey,
     signature::{Keypair, Signer},
     system_program,
     transaction::Transaction,
+};
+use spl_associated_token_account_client::address::get_associated_token_address;
+use spl_token::{
+    state::{Account as TokenAccount, AccountState},
+    ID as TOKEN_PROGRAM_ID,
 };
 
 use staratlas_cargo::{instruction::InitDefinition, typedefs::InitDefinitionInput};
@@ -613,74 +621,41 @@ fn sage_test() {
     assert!(tx_result.is_ok());
 
     // TODO: _createShipMint()
-    let mint_ship_kp = Keypair::new();
-    // FIXME: issues with `litesvm-token`
+    // FIXME: issues with `litesvm-token 0.5.0` crate
+    let ship_mint = pubkey!("AkNbg12E9PatjkiAWJ3tAbM479gtcoA1gi6Joa925WKi"); // Calico Compakt Hero
+    let ata = get_associated_token_address(&wallet_pk, &ship_mint);
+    let ship_to_own = 5;
 
-    // fn test_infinite_usdc_mint() {
-    //     let owner = Pubkey::new_unique();
-    //     let usdc_mint = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
-    //     let ata = get_associated_token_address(&owner, &usdc_mint);
-    //     let usdc_to_own = 1_000_000_000_000;
-    //     let token_acc = TokenAccount {
-    //         mint: usdc_mint,
-    //         owner: owner,
-    //         amount: usdc_to_own,
-    //         delegate: COption::None,
-    //         state: AccountState::Initialized,
-    //         is_native: COption::None,
-    //         delegated_amount: 0,
-    //         close_authority: COption::None,
-    //     };
-    //     let mut svm = LiteSVM::new();
-    //     let mut token_acc_bytes = [0u8; TokenAccount::LEN];
-    //     TokenAccount::pack(token_acc, &mut token_acc_bytes).unwrap();
-    //     svm.set_account(
-    //         ata,
-    //         Account {
-    //             lamports: 1_000_000_000,
-    //             data: token_acc_bytes.to_vec(),
-    //             owner: TOKEN_PROGRAM_ID,
-    //             executable: false,
-    //             rent_epoch: 0,
-    //         },
-    //     )
-    //     .unwrap();
-    //     let raw_account = svm.get_account(&ata).unwrap();
-    //     assert_eq!(
-    //         TokenAccount::unpack(&raw_account.data).unwrap().amount,
-    //         usdc_to_own
-    //     )
-    // }
+    let token_acc = TokenAccount {
+        mint: ship_mint,
+        owner: wallet_pk,
+        amount: ship_to_own,
+        delegate: COption::None,
+        state: AccountState::Initialized,
+        is_native: COption::None,
+        delegated_amount: 0,
+        close_authority: COption::None,
+    };
 
-    // export function createMint(
-    //     mint: AsyncSigner,
-    //     decimals: number,
-    //     mintAuthority: PublicKey,
-    //     freezeAuthority: PublicKey | null
-    //   ): InstructionReturn {
-    //     // eslint-disable-next-line require-await
-    //     return async (funder) => [
-    //       {
-    //         instruction: SystemProgram.createAccount({
-    //           fromPubkey: funder.publicKey(),
-    //           lamports: calculateMinimumRent(MINT_SIZE),
-    //           newAccountPubkey: mint.publicKey(),
-    //           programId: TOKEN_PROGRAM_ID,
-    //           space: MINT_SIZE,
-    //         }),
-    //         signers: [mint, funder],
-    //       },
-    //       {
-    //         instruction: createInitializeMintInstruction(
-    //           mint.publicKey(),
-    //           decimals,
-    //           mintAuthority,
-    //           freezeAuthority
-    //         ),
-    //         signers: [],
-    //       },
-    //     ];
-    //   }
+    let mut token_acc_bytes = [0u8; TokenAccount::LEN];
+    TokenAccount::pack(token_acc, &mut token_acc_bytes).unwrap();
+
+    svm.set_account(
+        ata,
+        Account {
+            lamports: 1_000_000_000,
+            data: token_acc_bytes.to_vec(),
+            owner: TOKEN_PROGRAM_ID,
+            executable: false,
+            rent_epoch: 0,
+        },
+    )
+    .unwrap();
+
+    let raw_account = svm.get_account(&ata).unwrap();
+    let token_acc = TokenAccount::unpack(&raw_account.data).unwrap();
+    dbg!(&token_acc);
+    assert_eq!(token_acc.amount, ship_to_own);
 
     // TODO: mintAndImportCrewToGame()
 
