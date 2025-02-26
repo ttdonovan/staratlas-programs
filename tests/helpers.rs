@@ -4,6 +4,181 @@ use solana_sdk::{
     signature::{Keypair, Signer},
 };
 
+pub fn setup_crew_config_instructions(
+    authority: &'Signer Keypair,
+    profile: &Pubkey,
+    key_index: u8,
+    game_id: &Pubkey,
+) {
+    let crew_collection_kp = Keypair::generate();
+    let crew_creator_kp = Keypair::generate();
+
+    //     if (!adminSigner.inner) {
+    //       throw 'adminSigner Keypair not found';
+    //     }
+    //     const crewCollectionKeypair = Keypair.generate();
+    //     const crewCreatorKeypair = Keypair.generate();
+    //     const [crewConfigPubkey, _crewConfigBump] = CrewConfig.findAddress(
+    //       crewProgram,
+    //       gameId,
+    //     );
+    //     const crewConfigAccount = await readFromRPCNullable(
+    //       connection,
+    //       crewProgram,
+    //       crewConfigPubkey,
+    //       CrewConfig,
+    //     );
+    //     const instructions = [];
+    //     let merkleTree: PublicKey;
+    //     if (crewConfigAccount) {
+    //       // use the last tree in the array to ensure freshness incase it is created in another package's tests
+    //       merkleTree =
+    //         crewConfigAccount.merkleTrees[crewConfigAccount.merkleTrees.length - 1];
+    //     } else {
+    //       const merkleTreeCreated = await createTree(umi, {
+    //         public: false,
+    //         maxDepth,
+    //         maxBufferSize,
+    //         canopyDepth,
+    //         treeCreator: createSignerFromKeypair(
+    //           umi,
+    //           fromWeb3JsKeypair(adminSigner.inner() as Keypair),
+    //         ),
+    //       });
+    //       await setTreeDelegate(umi, {
+    //         merkleTree: merkleTreeCreated,
+    //         newTreeDelegate: fromWeb3JsPublicKey(crewConfigPubkey),
+    //       }).sendAndConfirm(umi, {
+    //         send: { skipPreflight: true },
+    //       });
+    //       merkleTree = toWeb3JsPublicKey(merkleTreeCreated);
+    //       instructions.push(
+    //         registerCrewConfig(
+    //           crewProgram,
+    //           adminProfile,
+    //           {
+    //             namePrefix: 'Test',
+    //             symbol: 'Test',
+    //             uriPrefix: 'Test',
+    //             sellerFeeBasisPoints: 20,
+    //             collection: crewCollectionKeypair.publicKey,
+    //             creators: [{ key: crewCreatorKeypair.publicKey, share: 100 }],
+    //           },
+    //           [merkleTree],
+    //           gameId, // seedPubkey
+    //         ),
+    //       );
+
+    todo!();
+}
+
+// const crewConfigResult = await setupCrewConfigInstructions(
+//     authority,
+//     playerProfile.publicKey(),
+//     0,
+//     _game.publicKey(),
+//     program,
+//     crewProgram,
+//     await setupUmi(walletSigner, provider.connection),
+//     provider.connection,
+//   );
+
+// async configureCrew() {
+//     const crewConfigResult = await setupCrewConfigInstructions(
+//       this.profiles.superuser.key,
+//       this.profiles.superuser.profile,
+//       this.profiles.superuser.index,
+//       this.gameId,
+//       this.program,
+//       this.crewProgram,
+//       await setupUmi(this.funder, this.connection, [
+//         this.profiles.superuser.key,
+//       ]),
+//       this.connection,
+//     );
+//     const { instructions, ...rest } = crewConfigResult;
+//     if (instructions.length > 0) {
+//       await this.sendManyToChain(instructions, true);
+//     }
+//     this.crew = {
+//       crewMerkleTree: rest.merkleTree,
+//       sageCrewConfig: rest.sageCrewConfig[0],
+//       crewProgramConfig: rest.crewProgramConfig,
+//       knownLeaves: [],
+//     };
+//     return rest;
+//   }
+
+// export const setupCrewConfigInstructions = async (
+//     adminSigner: AsyncSigner,
+//     adminProfile: PublicKey,
+//     adminKeyIndex: number,
+//     gameId: PublicKey,
+//     sageProgram: SageIDLProgram,
+//     crewProgram: CrewIDLProgram,
+//     umi: Umi,
+//     connection: Connection,
+//     maxDepth = CREW_TREE_MAX_DEPTH,
+//     maxBufferSize = CREW_TREE_MAX_BUFFER_SIZE,
+//     canopyDepth = CREW_TREE_CANOPY_DEPTH,
+//   ) => {
+//     if (!adminSigner.inner) {
+//       throw 'adminSigner Keypair not found';
+//     }
+//     const crewCollectionKeypair = Keypair.generate();
+//     const crewCreatorKeypair = Keypair.generate();
+//     const [crewConfigPubkey, _crewConfigBump] = CrewConfig.findAddress(
+//       crewProgram,
+//       gameId,
+//     );
+//     const crewConfigAccount = await readFromRPCNullable(
+//       connection,
+//       crewProgram,
+//       crewConfigPubkey,
+//       CrewConfig,
+//     );
+//     const instructions = [];
+//     let merkleTree: PublicKey;
+//     if (crewConfigAccount) {
+//       // use the last tree in the array to ensure freshness incase it is created in another package's tests
+//       merkleTree =
+//         crewConfigAccount.merkleTrees[crewConfigAccount.merkleTrees.length - 1];
+//     } else {
+//       const merkleTreeCreated = await createTree(umi, {
+//         public: false,
+//         maxDepth,
+//         maxBufferSize,
+//         canopyDepth,
+//         treeCreator: createSignerFromKeypair(
+//           umi,
+//           fromWeb3JsKeypair(adminSigner.inner() as Keypair),
+//         ),
+//       });
+//       await setTreeDelegate(umi, {
+//         merkleTree: merkleTreeCreated,
+//         newTreeDelegate: fromWeb3JsPublicKey(crewConfigPubkey),
+//       }).sendAndConfirm(umi, {
+//         send: { skipPreflight: true },
+//       });
+//       merkleTree = toWeb3JsPublicKey(merkleTreeCreated);
+//       instructions.push(
+//         registerCrewConfig(
+//           crewProgram,
+//           adminProfile,
+//           {
+//             namePrefix: 'Test',
+//             symbol: 'Test',
+//             uriPrefix: 'Test',
+//             sellerFeeBasisPoints: 20,
+//             collection: crewCollectionKeypair.publicKey,
+//             creators: [{ key: crewCreatorKeypair.publicKey, share: 100 }],
+//           },
+//           [merkleTree],
+//           gameId, // seedPubkey
+//         ),
+//       );
+//     }
+
 // await mintAndImportCrewToGame(
 //     crewConfigResult.merkleTree,
 //     authority,
@@ -131,6 +306,59 @@ use solana_sdk::{
 //     }
 //   };
 
+// export const mintAndPrepareCrew = async (
+//     crewMerkleTree: PublicKey,
+//     crewOwner: PublicKey,
+//     umi: Umi,
+//     knownLeaves: UmiPublicKey[] = [],
+//     numCrew = 5,
+//     startingLeafIndex?: number,
+//     treeCreatorOrDelegate?: AsyncSigner,
+//   ) => {
+//     const umiCrewMerkleTree = fromWeb3JsPublicKey(crewMerkleTree);
+//     const merkleTreeAccount = await fetchMerkleTree(umi, umiCrewMerkleTree);
+//     const localKnownLeaves = [...knownLeaves];
+//     const leafIndex = startingLeafIndex ?? localKnownLeaves.length;
+//     let treeAdmin: UmiKeypair | undefined = undefined;
+//     if (treeCreatorOrDelegate && treeCreatorOrDelegate.inner) {
+//       treeAdmin = fromWeb3JsKeypair(treeCreatorOrDelegate.inner() as Keypair);
+//     }
+//     const items: (CrewTransferInput & { metadata: MetadataArgsArgs })[] = [];
+//     for (let index = 0; index < numCrew; index++) {
+//       const {
+//         metadata,
+//         leaf,
+//         leafIndex: newLeafIndex,
+//       } = await mintCNFT(umi, {
+//         merkleTree: umiCrewMerkleTree,
+//         leafOwner: fromWeb3JsPublicKey(crewOwner),
+//         leafIndex: leafIndex + index,
+//         treeCreatorOrDelegate:
+//           treeAdmin && createSignerFromKeypair(umi, treeAdmin),
+//       });
+//       const newProof = getMerkleProof(
+//         [...localKnownLeaves, leaf],
+//         CREW_TREE_MAX_DEPTH,
+//         leaf,
+//         newLeafIndex,
+//       );
+//       localKnownLeaves.push(leaf);
+//       items.push({
+//         merkleTree: toWeb3JsPublicKey(umiCrewMerkleTree),
+//         root: Array.from(getCurrentRoot(merkleTreeAccount.tree)),
+//         dataHash: Array.from(hashMetadataData(metadata)),
+//         leafIndex: newLeafIndex,
+//         metadata,
+//         creatorHash: new PublicKey(hashMetadataCreators(metadata.creators)),
+//         proof: newProof.map((it) => toWeb3JsPublicKey(it)),
+//       });
+//     }
+
+//     return {
+//       items,
+//       updatedLeaves: localKnownLeaves,
+//     };
+//   };
 pub fn mock_crew_setup(svm: &mut LiteSVM, num_crew: usize) {
     // Create crew merkle tree account
     let crew_merkle_tree_kp = Keypair::new();
@@ -150,10 +378,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_mock_crew_setup() {
-        let mut svm = LiteSVM::default();
-
-        let num_crew = 15;
-        mock_crew_setup(&mut svm, num_crew);
+    fn test_setup_crew_config_instructions() {
+        setup_crew_config_instructions();
     }
+
+    //     #[test]
+    //     fn test_mock_crew_setup() {
+    //         let mut svm = LiteSVM::default();
+
+    //         let num_crew = 15;
+    //         mock_crew_setup(&mut svm, num_crew);
+    //     }
 }
