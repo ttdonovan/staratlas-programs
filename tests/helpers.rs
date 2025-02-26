@@ -5,13 +5,13 @@ use solana_sdk::{
 };
 
 pub fn setup_crew_config_instructions(
-    authority: &'Signer Keypair,
+    authority: &Keypair,
     profile: &Pubkey,
     key_index: u8,
     game_id: &Pubkey,
 ) {
-    let crew_collection_kp = Keypair::generate();
-    let crew_creator_kp = Keypair::generate();
+    let crew_collection_kp = Keypair::new();
+    let crew_creator_kp = Keypair::new();
 
     //     if (!adminSigner.inner) {
     //       throw 'adminSigner Keypair not found';
@@ -379,7 +379,7 @@ mod tests {
 
     #[test]
     fn test_setup_crew_config_instructions() {
-        setup_crew_config_instructions();
+        todo!();
     }
 
     //     #[test]

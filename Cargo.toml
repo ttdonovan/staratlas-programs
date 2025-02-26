@@ -22,6 +22,7 @@ solana-program-pack = "2.2.1"
 spl-associated-token-account-client = "2.0.0"
 spl-token = "7.0.0"
 staratlas-cargo = { path = "programs/cargo", features = ["no-entrypoint"] }
+staratlas-crew = { path = "programs/crew", features = ["no-entrypoint"] }
 staratlas-player-profile = { path = "programs/player-profile", features = ["no-entrypoint"] }
 staratlas-profile-faction = { path = "programs/profile-faction", features = ["no-entrypoint"] }
 staratlas-sage = { path = "programs/sage", features = ["no-entrypoint"] }

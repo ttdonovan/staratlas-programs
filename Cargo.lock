@@ -4776,6 +4776,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "staratlas-crew"
+version = "0.1.0"
+dependencies = [
+ "anchor-gen",
+ "anchor-lang",
+]
+
+[[package]]
 name = "staratlas-player-profile"
 version = "0.1.0"
 dependencies = [
@@ -4802,6 +4810,7 @@ dependencies = [
  "spl-associated-token-account-client",
  "spl-token",
  "staratlas-cargo",
+ "staratlas-crew",
  "staratlas-player-profile",
  "staratlas-profile-faction",
  "staratlas-sage",

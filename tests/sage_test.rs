@@ -38,6 +38,10 @@ const CARGO_PROGRAM_ID: Pubkey = pubkey!("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSup
 const CARGO_PROGRAM_BYTES: &'static [u8; 608048] =
     include_bytes!("../programs/cargo/Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk.so");
 
+const CREW_PROGRAM_ID: Pubkey = pubkey!("CREWiq8qbxvo4SKkAFpVnc6t7CRQC4tAAscsNAENXgrJ");
+const CREW_PROGRAM_BYTES: &'static [u8; 647904] =
+    include_bytes!("../programs/crew/CREWiq8qbxvo4SKkAFpVnc6t7CRQC4tAAscsNAENXgrJ.so");
+
 const PLAYER_PROFILE_PROGRAM_ID: Pubkey = pubkey!("pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9");
 const PLAYER_PROFILE_PROGRAM_BYTES: &'static [u8; 1174816] =
     include_bytes!("../programs/player-profile/pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9.so");
@@ -70,6 +74,7 @@ fn sage_test() {
     svm.airdrop(&funder_pk, 10_000_000_000).unwrap();
     svm.airdrop(&wallet_pk, 10_000_000_000).unwrap();
     svm.add_program(CARGO_PROGRAM_ID, CARGO_PROGRAM_BYTES);
+    svm.add_program(CREW_PROGRAM_ID, CREW_PROGRAM_BYTES);
     svm.add_program(PLAYER_PROFILE_PROGRAM_ID, PLAYER_PROFILE_PROGRAM_BYTES);
     svm.add_program(PROFILE_FACTION_PROGRAM_ID, PROFILE_FACTION_PROGRAM_BYTES);
     svm.add_program(SAGE_PROGRAM_ID, SAGE_PROGRAM_BYTES);
