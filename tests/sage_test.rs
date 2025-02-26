@@ -27,39 +27,27 @@ use staratlas_sage::{
 };
 
 const CARGO_PROGRAM_ID: Pubkey = pubkey!("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk");
+const CARGO_PROGRAM_BYTES: &'static [u8; 608048] =
+    include_bytes!("../programs/cargo/Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk.so");
+
 const PLAYER_PROFILE_PROGRAM_ID: Pubkey = pubkey!("pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9");
+const PLAYER_PROFILE_PROGRAM_BYTES: &'static [u8; 1174816] =
+    include_bytes!("../programs/player-profile/pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9.so");
+
 const PROFILE_FACTION_PROGRAM_ID: Pubkey = pubkey!("pFACSRuobDmvfMKq1bAzwj27t6d2GJhSCHb1VcfnRmq");
+const PROFILE_FACTION_PROGRAM_BYTES: &'static [u8; 535312] =
+    include_bytes!("../programs/profile-faction/pFACSRuobDmvfMKq1bAzwj27t6d2GJhSCHb1VcfnRmq.so");
+
 const SAGE_PROGRAM_ID: Pubkey = pubkey!("SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE");
-
-fn read_cargo_program() -> Vec<u8> {
-    let mut bin_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    bin_path.push("programs/cargo/Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk.bin");
-    std::fs::read(bin_path).unwrap()
-}
-
-fn read_player_profile_program() -> Vec<u8> {
-    let mut bin_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    bin_path.push("programs/player-profile/pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9.bin");
-    std::fs::read(bin_path).unwrap()
-}
-
-fn read_profile_faction() -> Vec<u8> {
-    let mut bin_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    bin_path.push("programs/profile-faction/pFACSRuobDmvfMKq1bAzwj27t6d2GJhSCHb1VcfnRmq.bin");
-    std::fs::read(bin_path).unwrap()
-}
-
-fn read_sage_program() -> Vec<u8> {
-    let mut bin_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    bin_path.push("programs/sage/SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE.bin");
-    std::fs::read(bin_path).unwrap()
-}
+const SAGE_PROGRAM_BYTES: &'static [u8; 3232680] =
+    include_bytes!("../programs/sage/SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE.so");
 
 #[test]
 fn sage_test() {
     let feature_set = FeatureSet::all_enabled();
     let mut svm = LiteSVM::default()
-        .with_builtins(Some(feature_set))
+        .with_feature_set(feature_set)
+        .with_builtins()
         .with_lamports(1_000_000_000_000_000)
         .with_sysvars();
 
@@ -69,17 +57,12 @@ fn sage_test() {
     let wallet_kp = Keypair::new();
     let wallet_pk = wallet_kp.pubkey();
 
-    let cargo_program_bytes = read_cargo_program();
-    let player_profile_program_bytes = read_player_profile_program();
-    let profile_faction_program_bytes = read_profile_faction();
-    let sage_program_bytes = read_sage_program();
-
     svm.airdrop(&funder_pk, 10_000_000_000).unwrap();
     svm.airdrop(&wallet_pk, 10_000_000_000).unwrap();
-    svm.add_program(CARGO_PROGRAM_ID, &cargo_program_bytes);
-    svm.add_program(PLAYER_PROFILE_PROGRAM_ID, &player_profile_program_bytes);
-    svm.add_program(PROFILE_FACTION_PROGRAM_ID, &profile_faction_program_bytes);
-    svm.add_program(SAGE_PROGRAM_ID, &sage_program_bytes);
+    svm.add_program(CARGO_PROGRAM_ID, CARGO_PROGRAM_BYTES);
+    svm.add_program(PLAYER_PROFILE_PROGRAM_ID, PLAYER_PROFILE_PROGRAM_BYTES);
+    svm.add_program(PROFILE_FACTION_PROGRAM_ID, PROFILE_FACTION_PROGRAM_BYTES);
+    svm.add_program(SAGE_PROGRAM_ID, SAGE_PROGRAM_BYTES);
 
     let authority_kp = Keypair::new();
     let authority_pk = authority_kp.pubkey();
@@ -322,8 +305,8 @@ fn sage_test() {
             AccountMeta::new_readonly(authority_pk, true), // InitGameStateGameAndProfile<'info> pub key: Signer<'info>,
             AccountMeta::new_readonly(player_profile_pk, false), // InitGameStateGameAndProfile<'info>pub profile: AccountInfo<'info>,
             AccountMeta::new_readonly(game_pk, false), // InitGameStateGameAndProfile<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new(wallet_pk, true), // pub funder: Signer<'info>,
-            AccountMeta::new(game_state_pda, false), // pub game_state: AccountInfo<'info>,
+            AccountMeta::new(wallet_pk, true),         // pub funder: Signer<'info>,
+            AccountMeta::new(game_state_pda, false),   // pub game_state: AccountInfo<'info>,
             AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
         ],
         data: InitGameState {
@@ -350,7 +333,7 @@ fn sage_test() {
             AccountMeta::new_readonly(authority_pk, true), // UpdateGameStateGameAndProfile<'info> pub key: Signer<'info>,
             AccountMeta::new_readonly(player_profile_pk, false), // UpdateGameStateGameAndProfile<'info>pub profile: AccountInfo<'info>,
             AccountMeta::new_readonly(game_pk, false), // UpdateGameStateGameAndProfile<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new(game_state_pda, false), // pub game_state: AccountInfo<'info>,
+            AccountMeta::new(game_state_pda, false),   // pub game_state: AccountInfo<'info>,
             AccountMeta::new(Pubkey::default(), false), // old_recipe_for_upgrade
             AccountMeta::new(Pubkey::default(), false), // new_recipe_for_upgrade
             AccountMeta::new(Pubkey::default(), false), // recipe_category_for_level
@@ -632,6 +615,42 @@ fn sage_test() {
     // TODO: _createShipMint()
     let mint_ship_kp = Keypair::new();
     // FIXME: issues with `litesvm-token`
+
+    // fn test_infinite_usdc_mint() {
+    //     let owner = Pubkey::new_unique();
+    //     let usdc_mint = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+    //     let ata = get_associated_token_address(&owner, &usdc_mint);
+    //     let usdc_to_own = 1_000_000_000_000;
+    //     let token_acc = TokenAccount {
+    //         mint: usdc_mint,
+    //         owner: owner,
+    //         amount: usdc_to_own,
+    //         delegate: COption::None,
+    //         state: AccountState::Initialized,
+    //         is_native: COption::None,
+    //         delegated_amount: 0,
+    //         close_authority: COption::None,
+    //     };
+    //     let mut svm = LiteSVM::new();
+    //     let mut token_acc_bytes = [0u8; TokenAccount::LEN];
+    //     TokenAccount::pack(token_acc, &mut token_acc_bytes).unwrap();
+    //     svm.set_account(
+    //         ata,
+    //         Account {
+    //             lamports: 1_000_000_000,
+    //             data: token_acc_bytes.to_vec(),
+    //             owner: TOKEN_PROGRAM_ID,
+    //             executable: false,
+    //             rent_epoch: 0,
+    //         },
+    //     )
+    //     .unwrap();
+    //     let raw_account = svm.get_account(&ata).unwrap();
+    //     assert_eq!(
+    //         TokenAccount::unpack(&raw_account.data).unwrap().amount,
+    //         usdc_to_own
+    //     )
+    // }
 
     // export function createMint(
     //     mint: AsyncSigner,

@@ -11,11 +11,11 @@ members = [
 
 [workspace.dependencies]
 anchor-gen = "0.3.1"
-anchor-lang = "0.30.1"
+anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
 
 [dev-dependencies]
-anchor-lang = "0.30.1"
-litesvm = { git = "https://github.com/LiteSVM/litesvm", rev = "7e3d9a8" }
+anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
+litesvm = "0.6"
 # litesvm-token = { git = "https://github.com/LiteSVM/litesvm", rev = "7e3d9a8" }
 solana-sdk = "2.2.1"
 staratlas-cargo = { path = "programs/cargo", features = ["no-entrypoint"] }

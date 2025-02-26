@@ -37,10 +37,10 @@ solana balance
 ## Star Atlas Programs
 
 ```
-$ solana program dump Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk programs/cargo/Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk.bin
-$ solana program dump pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9 programs/player-profile/pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9.bin
-$ solana program dump pFACSRuobDmvfMKq1bAzwj27t6d2GJhSCHb1VcfnRmq programs/profile-faction/pFACSRuobDmvfMKq1bAzwj27t6d2GJhSCHb1VcfnRmq.bin
-$ solana program dump SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE programs/sage/SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE.bin
+$ solana program dump Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk programs/cargo/Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk.so
+$ solana program dump pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9 programs/player-profile/pprofELXjL5Kck7Jn5hCpwAL82DpTkSYBENzahVtbc9.so
+$ solana program dump pFACSRuobDmvfMKq1bAzwj27t6d2GJhSCHb1VcfnRmq programs/profile-faction/pFACSRuobDmvfMKq1bAzwj27t6d2GJhSCHb1VcfnRmq.so
+$ solana program dump SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE programs/sage/SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE.so
 ```
 
 ### Claude
