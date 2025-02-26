@@ -50,6 +50,8 @@ const SAGE_PROGRAM_ID: Pubkey = pubkey!("SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7
 const SAGE_PROGRAM_BYTES: &'static [u8; 3232680] =
     include_bytes!("../programs/sage/SAGE2HAwep459SNq61LHvjxPk4pLPEJLoMETef7f7EE.so");
 
+mod helpers;
+
 #[test]
 fn sage_test() {
     let feature_set = FeatureSet::all_enabled();
@@ -658,6 +660,7 @@ fn sage_test() {
     assert_eq!(token_acc.amount, ship_to_own);
 
     // TODO: mintAndImportCrewToGame()
+    // helpers::mock_crew_setup(&mut svm, 30);
 
     assert!(true);
 }
