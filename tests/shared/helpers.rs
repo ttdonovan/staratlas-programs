@@ -1,8 +1,47 @@
-use litesvm::LiteSVM;
+use litesvm::{types::FailedTransactionMetadata, LiteSVM};
 use solana_sdk::{
+    program_pack::Pack,
     pubkey::Pubkey,
     signature::{Keypair, Signer},
+    system_instruction,
+    transaction::Transaction,
 };
+
+// https://github.com/LiteSVM/litesvm/blob/master/crates/token/src/create_mint.rs
+pub fn create_mint<'a>(
+    svm: &'a mut LiteSVM,
+    payer: &'a Keypair,
+    mint_kp: &'a Keypair,
+    decimals: u8,
+    authority_pk: &'a Pubkey,
+) -> Result<Pubkey, FailedTransactionMetadata> {
+    use spl_token::{instruction::initialize_mint2, state::Mint, ID as TOKEN_PROGRAM_ID};
+
+    let mint_size = Mint::LEN;
+    let mint_pk = mint_kp.pubkey();
+    let payer_pk = payer.pubkey();
+
+    let ix1 = system_instruction::create_account(
+        &payer_pk,
+        &mint_pk,
+        svm.minimum_balance_for_rent_exemption(mint_size),
+        mint_size as u64,
+        &TOKEN_PROGRAM_ID,
+    );
+
+    let ix2 = initialize_mint2(&TOKEN_PROGRAM_ID, &mint_pk, authority_pk, None, decimals)?;
+
+    let tx = Transaction::new_signed_with_payer(
+        &[ix1, ix2],
+        Some(&payer_pk),
+        &[payer, &mint_kp],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx)?;
+
+    Ok(mint_pk)
+}
 
 pub fn setup_crew_config_instructions(
     authority: &Keypair,
@@ -377,10 +416,10 @@ pub fn mock_crew_setup(svm: &mut LiteSVM, num_crew: usize) {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_setup_crew_config_instructions() {
-        todo!();
-    }
+    // #[test]
+    // fn test_setup_crew_config_instructions() {
+    //     todo!();
+    // }
 
     //     #[test]
     //     fn test_mock_crew_setup() {

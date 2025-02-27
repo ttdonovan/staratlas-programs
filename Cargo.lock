@@ -4805,7 +4805,6 @@ version = "0.0.0"
 dependencies = [
  "anchor-lang",
  "litesvm",
- "solana-program-pack",
  "solana-sdk",
  "spl-associated-token-account-client",
  "spl-token",
