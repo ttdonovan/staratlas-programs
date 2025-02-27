@@ -52,7 +52,7 @@ pub fn setup_crew_config_instructions(
     profile_pk: &Pubkey,
     funder_pk: &Pubkey,
     game_pk: &Pubkey,
-) -> Instruction {
+) -> (Instruction, Pubkey) {
     use staratlas_crew::{
         instruction::RegisterCrewConfig,
         typedefs::{CrewCreatorUnpacked, RegisterCrewConfigArgs},
@@ -93,7 +93,7 @@ pub fn setup_crew_config_instructions(
         .data(),
     };
 
-    register_crew_config_ix
+    (register_crew_config_ix, crew_merkle_tree_pk)
 }
 
 // const crewConfigResult = await setupCrewConfigInstructions(

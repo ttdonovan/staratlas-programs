@@ -282,25 +282,6 @@ fn sage_test() {
     let tx_result = svm.send_transaction(tx);
     assert!(tx_result.is_ok());
 
-    let crew_config_ix =
-        helpers::setup_crew_config_instructions(&player_profile_pk, &wallet_pk, &game_pk);
-
-    let tx = Transaction::new_signed_with_payer(
-        &[crew_config_ix],
-        Some(&wallet_pk),
-        &[&wallet_kp],
-        svm.latest_blockhash(),
-    );
-    let tx_result = svm.send_transaction(tx);
-    assert!(tx_result.is_ok());
-
-    let (crew_config_pda, _bump) =
-        Pubkey::find_program_address(&[b"crew_config", game_pk.as_ref()], &CREW_PROGRAM_ID);
-
-    let crew_config_acc = svm.get_account(&crew_config_pda).unwrap();
-    let crew_config_data = CrewConfig::try_deserialize(&mut &crew_config_acc.data[..]).unwrap();
-    assert_eq!(crew_config_data.seed_pubkey.as_ref(), game_pk.as_ref());
-
     let game_acc = svm.get_account(&game_pk).unwrap();
     let game_data = Game::try_deserialize(&mut &game_acc.data[..]).unwrap();
 
@@ -627,6 +608,49 @@ fn sage_test() {
     let tx_result = svm.send_transaction(tx);
     assert!(tx_result.is_ok());
 
+    let (crew_config_ix, crew_merkle_tree_pk) =
+        helpers::setup_crew_config_instructions(&player_profile_pk, &wallet_pk, &game_pk);
+
+    let tx = Transaction::new_signed_with_payer(
+        &[crew_config_ix],
+        Some(&wallet_pk),
+        &[&wallet_kp],
+        svm.latest_blockhash(),
+    );
+    let tx_result = svm.send_transaction(tx);
+    assert!(tx_result.is_ok());
+
+    let (crew_config_pda, _bump) =
+        Pubkey::find_program_address(&[b"crew_config", game_pk.as_ref()], &CREW_PROGRAM_ID);
+
+    let crew_config_acc = svm.get_account(&crew_config_pda).unwrap();
+    let crew_config_data = CrewConfig::try_deserialize(&mut &crew_config_acc.data[..]).unwrap();
+    assert_eq!(crew_config_data.seed_pubkey.as_ref(), game_pk.as_ref());
+    dbg!(&crew_merkle_tree_pk);
+
+    // see `starbaseCrafting.test.ts` for examples
+
+    // // TODO: import crew to game
+    // await mintAndImportCrewToGame(
+    //     crewConfigResult.merkleTree,
+    //     authority,
+    //     crewConfigResult.crewProgramConfig,
+    //     await setupUmi(walletSigner, provider.connection),
+    //     program,
+    //     playerProfile.publicKey(),
+    //     ProfileFactionAccount.findAddress(
+    //       profileFactionProgram,
+    //       playerProfile.publicKey(),
+    //     )[0],
+    //     _starbasePlayerKey,
+    //     _starbaseKey,
+    //     _game.publicKey(),
+    //     funder,
+    //     connection,
+    //     [], // knownLeaves
+    //     5, // numCrew
+    //   );
+
     // TODO: _createShipMint()
     // FIXME: issues with `litesvm-token 0.5.0` crate
     let ship_mint = pubkey!("AkNbg12E9PatjkiAWJ3tAbM479gtcoA1gi6Joa925WKi"); // Calico Compakt Hero
@@ -663,9 +687,6 @@ fn sage_test() {
     let token_acc = TokenAccount::unpack(&raw_account.data).unwrap();
     dbg!(&token_acc);
     assert_eq!(token_acc.amount, ship_to_own);
-
-    // TODO: mintAndImportCrewToGame()
-    // helpers::mock_crew_setup(&mut svm, 30);
 
     assert!(true);
 }
