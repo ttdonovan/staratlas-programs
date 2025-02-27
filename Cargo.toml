@@ -29,4 +29,4 @@ staratlas-crew = { path = "programs/crew", features = ["no-entrypoint"] }
 staratlas-player-profile = { path = "programs/player-profile", features = ["no-entrypoint"] }
 staratlas-profile-faction = { path = "programs/profile-faction", features = ["no-entrypoint"] }
 staratlas-sage = { path = "programs/sage", features = ["no-entrypoint"] }
-staratlas-sage-sdk = { path = "crates/sage-sdk" }
+staratlas-starbased-sdk = { path = "crates/starbased-sdk" }

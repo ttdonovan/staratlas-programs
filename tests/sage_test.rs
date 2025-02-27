@@ -35,6 +35,8 @@ use staratlas_sage::{
     },
 };
 
+use staratlas_starbased_sdk as based_sdk;
+
 mod shared;
 use shared::{
     constants::{
@@ -257,9 +259,9 @@ fn sage_test() {
     let tx_result = svm.send_transaction(tx);
     assert!(tx_result.is_ok());
 
-    // sage-sdk: admin create game
+    // starbased-sdk: admin create game
     let game_kp = Keypair::new();
-    let game_pk = staratlas_sage_sdk::admin::CreateGame::new(
+    let game_pk = based_sdk::admin::CreateGame::new(
         &authority_kp,
         &player_profile_pk, // TODO: rename to 'sage_profile_pk'?
         &wallet_kp,

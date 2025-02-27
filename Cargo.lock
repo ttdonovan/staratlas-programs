@@ -4813,7 +4813,7 @@ dependencies = [
  "staratlas-player-profile",
  "staratlas-profile-faction",
  "staratlas-sage",
- "staratlas-sage-sdk",
+ "staratlas-starbased-sdk",
 ]
 
 [[package]]
@@ -4825,7 +4825,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "staratlas-sage-sdk"
+name = "staratlas-starbased-sdk"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
