@@ -6,12 +6,16 @@ publish = false
 
 [workspace]
 members = [
+    "crates/*",
     "programs/*"
 ]
 
 [workspace.dependencies]
 anchor-gen = "0.3.1"
 anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
+litesvm = "0.6"
+solana-sdk = "2.2.1"
+staratlas-sage = { path = "programs/sage", features = ["no-entrypoint"] }
 
 [dev-dependencies]
 anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
@@ -25,3 +29,4 @@ staratlas-crew = { path = "programs/crew", features = ["no-entrypoint"] }
 staratlas-player-profile = { path = "programs/player-profile", features = ["no-entrypoint"] }
 staratlas-profile-faction = { path = "programs/profile-faction", features = ["no-entrypoint"] }
 staratlas-sage = { path = "programs/sage", features = ["no-entrypoint"] }
+staratlas-sage-sdk = { path = "crates/sage-sdk" }

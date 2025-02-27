@@ -1,0 +1,10 @@
+[package]
+name = "staratlas-sage-sdk"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anchor-lang.workspace = true
+litesvm.workspace = true
+solana-sdk.workspace = true
+staratlas-sage.workspace = true

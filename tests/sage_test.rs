@@ -25,7 +25,7 @@ use staratlas_player_profile::{instruction::CreateProfile, typedefs::AddKeyInput
 use staratlas_profile_faction::{instruction::ChooseFaction, typedefs::Faction};
 use staratlas_sage::{
     instruction::{
-        ActivateGameState, InitGame, InitGameState, RegisterSagePlayerProfile, RegisterSector,
+        ActivateGameState, InitGameState, RegisterSagePlayerProfile, RegisterSector,
         RegisterStarbase, RegisterStarbasePlayer, UpdateGame, UpdateGameState,
     },
     state::{Game, GameState, Sector},
@@ -257,30 +257,16 @@ fn sage_test() {
     let tx_result = svm.send_transaction(tx);
     assert!(tx_result.is_ok());
 
-    // init game
+    // sage-sdk: admin create game
     let game_kp = Keypair::new();
-    let game_pk = game_kp.pubkey();
-
-    let init_game_ix = Instruction {
-        program_id: SAGE_PROGRAM_ID,
-        accounts: vec![
-            AccountMeta::new(authority_pk, true), // pub signer: Signer<'info>,
-            AccountMeta::new_readonly(player_profile_pk, false), // pub profile: AccountInfo<'info>,
-            AccountMeta::new(wallet_pk, true),    // pub funder: Signer<'info>,
-            AccountMeta::new(game_pk, true),      // pub game_id: Signer<'info>,
-            AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
-        ],
-        data: InitGame {}.data(),
-    };
-
-    let message = Message::new(&[init_game_ix], Some(&wallet_pk));
-    let tx = Transaction::new(
-        &[&authority_kp, &wallet_kp, &game_kp],
-        message,
-        svm.latest_blockhash(),
-    );
-    let tx_result = svm.send_transaction(tx);
-    assert!(tx_result.is_ok());
+    let game_pk = staratlas_sage_sdk::admin::CreateGame::new(
+        &authority_kp,
+        &player_profile_pk, // TODO: rename to 'sage_profile_pk'?
+        &wallet_kp,
+    )
+    .set_game_kp(game_kp)
+    .send(&mut svm)
+    .unwrap();
 
     let game_acc = svm.get_account(&game_pk).unwrap();
     let game_data = Game::try_deserialize(&mut &game_acc.data[..]).unwrap();

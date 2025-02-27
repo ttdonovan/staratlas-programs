@@ -4813,6 +4813,7 @@ dependencies = [
  "staratlas-player-profile",
  "staratlas-profile-faction",
  "staratlas-sage",
+ "staratlas-sage-sdk",
 ]
 
 [[package]]
@@ -4821,6 +4822,16 @@ version = "0.1.0"
 dependencies = [
  "anchor-gen",
  "anchor-lang",
+]
+
+[[package]]
+name = "staratlas-sage-sdk"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "litesvm",
+ "solana-sdk",
+ "staratlas-sage",
 ]
 
 [[package]]
