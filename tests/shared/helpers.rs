@@ -1,11 +1,16 @@
+#![allow(dead_code)]
+use anchor_lang::InstructionData;
 use litesvm::{types::FailedTransactionMetadata, LiteSVM};
 use solana_sdk::{
+    instruction::{AccountMeta, Instruction},
     program_pack::Pack,
     pubkey::Pubkey,
     signature::{Keypair, Signer},
-    system_instruction,
+    system_instruction, system_program,
     transaction::Transaction,
 };
+
+use super::constants::CREW_PROGRAM_ID;
 
 // https://github.com/LiteSVM/litesvm/blob/master/crates/token/src/create_mint.rs
 pub fn create_mint<'a>(
@@ -44,71 +49,51 @@ pub fn create_mint<'a>(
 }
 
 pub fn setup_crew_config_instructions(
-    authority: &Keypair,
-    profile: &Pubkey,
-    key_index: u8,
-    game_id: &Pubkey,
-) {
+    profile_pk: &Pubkey,
+    funder_pk: &Pubkey,
+    game_pk: &Pubkey,
+) -> Instruction {
+    use staratlas_crew::{
+        instruction::RegisterCrewConfig,
+        typedefs::{CrewCreatorUnpacked, RegisterCrewConfigArgs},
+    };
+
     let crew_collection_kp = Keypair::new();
     let crew_creator_kp = Keypair::new();
 
-    //     if (!adminSigner.inner) {
-    //       throw 'adminSigner Keypair not found';
-    //     }
-    //     const crewCollectionKeypair = Keypair.generate();
-    //     const crewCreatorKeypair = Keypair.generate();
-    //     const [crewConfigPubkey, _crewConfigBump] = CrewConfig.findAddress(
-    //       crewProgram,
-    //       gameId,
-    //     );
-    //     const crewConfigAccount = await readFromRPCNullable(
-    //       connection,
-    //       crewProgram,
-    //       crewConfigPubkey,
-    //       CrewConfig,
-    //     );
-    //     const instructions = [];
-    //     let merkleTree: PublicKey;
-    //     if (crewConfigAccount) {
-    //       // use the last tree in the array to ensure freshness incase it is created in another package's tests
-    //       merkleTree =
-    //         crewConfigAccount.merkleTrees[crewConfigAccount.merkleTrees.length - 1];
-    //     } else {
-    //       const merkleTreeCreated = await createTree(umi, {
-    //         public: false,
-    //         maxDepth,
-    //         maxBufferSize,
-    //         canopyDepth,
-    //         treeCreator: createSignerFromKeypair(
-    //           umi,
-    //           fromWeb3JsKeypair(adminSigner.inner() as Keypair),
-    //         ),
-    //       });
-    //       await setTreeDelegate(umi, {
-    //         merkleTree: merkleTreeCreated,
-    //         newTreeDelegate: fromWeb3JsPublicKey(crewConfigPubkey),
-    //       }).sendAndConfirm(umi, {
-    //         send: { skipPreflight: true },
-    //       });
-    //       merkleTree = toWeb3JsPublicKey(merkleTreeCreated);
-    //       instructions.push(
-    //         registerCrewConfig(
-    //           crewProgram,
-    //           adminProfile,
-    //           {
-    //             namePrefix: 'Test',
-    //             symbol: 'Test',
-    //             uriPrefix: 'Test',
-    //             sellerFeeBasisPoints: 20,
-    //             collection: crewCollectionKeypair.publicKey,
-    //             creators: [{ key: crewCreatorKeypair.publicKey, share: 100 }],
-    //           },
-    //           [merkleTree],
-    //           gameId, // seedPubkey
-    //         ),
-    //       );
+    let (crew_config_pda, _bump) =
+        Pubkey::find_program_address(&[b"crew_config", game_pk.as_ref()], &CREW_PROGRAM_ID);
 
-    todo!();
+    let crew_merkle_tree_kp = Keypair::new();
+    let crew_merkle_tree_pk = crew_merkle_tree_kp.pubkey();
+
+    let register_crew_config_ix = Instruction {
+        program_id: CREW_PROGRAM_ID,
+        accounts: vec![
+            AccountMeta::new_readonly(*profile_pk, false), // pub profile: AccountInfo<'info>,
+            AccountMeta::new(*funder_pk, true),            // pub funder: Signer<'info>,
+            AccountMeta::new(crew_config_pda, false),      // pub crew_config: AccountInfo<'info>,
+            AccountMeta::new_readonly(*game_pk, false),    // pub seed_pubkey: AccountInfo<'info>,
+            AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
+            AccountMeta::new(crew_merkle_tree_pk, false),
+        ],
+        data: RegisterCrewConfig {
+            _args: RegisterCrewConfigArgs {
+                name_prefix: "Test".into(),
+                symbol: "Test".into(),
+                uri_prefix: "Test".into(),
+                seller_fee_basis_points: 20,
+                collection: crew_collection_kp.pubkey(),
+                creators: vec![CrewCreatorUnpacked {
+                    key: crew_creator_kp.pubkey(),
+                    share: 100,
+                }],
+            },
+        }
+        .data(),
+    };
+
+    register_crew_config_ix
 }
 
 // const crewConfigResult = await setupCrewConfigInstructions(
@@ -398,7 +383,7 @@ pub fn setup_crew_config_instructions(
 //       updatedLeaves: localKnownLeaves,
 //     };
 //   };
-pub fn mock_crew_setup(svm: &mut LiteSVM, num_crew: usize) {
+pub fn mock_crew_setup(_svm: &mut LiteSVM, _num_crew: usize) {
     // Create crew merkle tree account
     let crew_merkle_tree_kp = Keypair::new();
     let crew_merkle_tree_pk = crew_merkle_tree_kp.pubkey();
@@ -412,20 +397,20 @@ pub fn mock_crew_setup(svm: &mut LiteSVM, num_crew: usize) {
     todo!();
 }
 
-// cargo test --test helpers -- --nocapture
-mod tests {
-    use super::*;
+// // cargo test --test helpers -- --nocapture
+// mod tests {
+//     use super::*;
 
-    // #[test]
-    // fn test_setup_crew_config_instructions() {
-    //     todo!();
-    // }
+//     #[test]
+//     fn test_setup_crew_config_instructions() {
+//         todo!();
+//     }
 
-    //     #[test]
-    //     fn test_mock_crew_setup() {
-    //         let mut svm = LiteSVM::default();
+//         #[test]
+//         fn test_mock_crew_setup() {
+//             let mut svm = LiteSVM::default();
 
-    //         let num_crew = 15;
-    //         mock_crew_setup(&mut svm, num_crew);
-    //     }
-}
+//             let num_crew = 15;
+//             mock_crew_setup(&mut svm, num_crew);
+//         }
+// }

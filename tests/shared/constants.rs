@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use solana_sdk::{pubkey, pubkey::Pubkey};
 
 pub const CARGO_PROGRAM_ID: Pubkey = pubkey!("Cargo2VNTPPTi9c1vq1Jw5d3BWUNr18MjRtSupAghKEk");

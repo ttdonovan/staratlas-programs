@@ -1,12 +1,12 @@
 use anchor_lang::{prelude::Pubkey as AnchorPubkey, AccountDeserialize, InstructionData};
 use litesvm::LiteSVM;
-use solana_program_pack::Pack;
 use solana_sdk::{
     account::Account,
     feature_set::FeatureSet,
     instruction::{AccountMeta, Instruction},
     message::Message,
     program_option::COption,
+    program_pack::Pack,
     pubkey,
     pubkey::Pubkey,
     signature::{Keypair, Signer},
@@ -20,6 +20,7 @@ use spl_token::{
 };
 
 use staratlas_cargo::{instruction::InitDefinition, typedefs::InitDefinitionInput};
+use staratlas_crew::state::CrewConfig;
 use staratlas_player_profile::{instruction::CreateProfile, typedefs::AddKeyInput};
 use staratlas_profile_faction::{instruction::ChooseFaction, typedefs::Faction};
 use staratlas_sage::{
@@ -70,14 +71,8 @@ fn sage_test() {
     let authority_kp = Keypair::new();
     let authority_pk = authority_kp.pubkey();
 
-    let sage_kp = Keypair::new();
-    let sage_pk = sage_kp.pubkey();
-
     let player_profile_kp = Keypair::new();
     let player_profile_pk = player_profile_kp.pubkey();
-
-    let player_kp = Keypair::new();
-    let player_pk = player_kp.pubkey();
 
     // TODO: create a "super" user profile
     // // Cargo Superuser // 1
@@ -238,8 +233,6 @@ fn sage_test() {
     // create cargo stats definition
     let cargo_stats_definition_kp = Keypair::new();
     let cargo_stats_definition_pk = cargo_stats_definition_kp.pubkey();
-    let cargo_kp = Keypair::new();
-    let cargo_pk = cargo_kp.pubkey();
 
     let init_definition_ix = Instruction {
         program_id: CARGO_PROGRAM_ID,
@@ -288,6 +281,25 @@ fn sage_test() {
     );
     let tx_result = svm.send_transaction(tx);
     assert!(tx_result.is_ok());
+
+    let crew_config_ix =
+        helpers::setup_crew_config_instructions(&player_profile_pk, &wallet_pk, &game_pk);
+
+    let tx = Transaction::new_signed_with_payer(
+        &[crew_config_ix],
+        Some(&wallet_pk),
+        &[&wallet_kp],
+        svm.latest_blockhash(),
+    );
+    let tx_result = svm.send_transaction(tx);
+    assert!(tx_result.is_ok());
+
+    let (crew_config_pda, _bump) =
+        Pubkey::find_program_address(&[b"crew_config", game_pk.as_ref()], &CREW_PROGRAM_ID);
+
+    let crew_config_acc = svm.get_account(&crew_config_pda).unwrap();
+    let crew_config_data = CrewConfig::try_deserialize(&mut &crew_config_acc.data[..]).unwrap();
+    assert_eq!(crew_config_data.seed_pubkey.as_ref(), game_pk.as_ref());
 
     let game_acc = svm.get_account(&game_pk).unwrap();
     let game_data = Game::try_deserialize(&mut &game_acc.data[..]).unwrap();
