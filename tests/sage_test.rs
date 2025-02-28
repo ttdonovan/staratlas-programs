@@ -25,13 +25,13 @@ use staratlas_player_profile::{instruction::CreateProfile, typedefs::AddKeyInput
 use staratlas_profile_faction::{instruction::ChooseFaction, typedefs::Faction};
 use staratlas_sage::{
     instruction::{
-        ActivateGameState, InitGameState, RegisterSagePlayerProfile, RegisterSector,
-        RegisterStarbase, RegisterStarbasePlayer, UpdateGame, UpdateGameState,
+        RegisterSagePlayerProfile, RegisterStarbase, RegisterStarbasePlayer, UpdateGame,
+        UpdateGameState,
     },
     state::{Game, GameState, Sector},
     typedefs::{
-        FleetInput, InitGameStateInput, ManageGameInput, RegisterStarbaseInputUnpacked, SectorRing,
-        StarbaseLevelInfoArrayInput, UpdateGameInput, UpdateGameStateInput,
+        FleetInput, RegisterStarbaseInputUnpacked, SectorRing, StarbaseLevelInfoArrayInput,
+        UpdateGameInput, UpdateGameStateInput,
     },
 };
 
@@ -269,46 +269,23 @@ fn sage_test() {
     .set_game_kp(game_kp)
     .send(&mut svm)
     .unwrap();
+    dbg!(&game_pk);
 
     let game_acc = svm.get_account(&game_pk).unwrap();
     let game_data = Game::try_deserialize(&mut &game_acc.data[..]).unwrap();
 
-    let (game_state_pda, _bump) = Pubkey::find_program_address(
-        &[
-            b"GameState",
-            game_pk.as_ref(),
-            &(game_data.update_id + 1).to_le_bytes(),
-        ],
-        &SAGE_PROGRAM_ID,
-    );
-
-    // init game state
-    let init_game_state_ix = Instruction {
-        program_id: SAGE_PROGRAM_ID,
-        accounts: vec![
-            AccountMeta::new_readonly(authority_pk, true), // InitGameStateGameAndProfile<'info> pub key: Signer<'info>,
-            AccountMeta::new_readonly(player_profile_pk, false), // InitGameStateGameAndProfile<'info>pub profile: AccountInfo<'info>,
-            AccountMeta::new_readonly(game_pk, false), // InitGameStateGameAndProfile<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new(wallet_pk, true),         // pub funder: Signer<'info>,
-            AccountMeta::new(game_state_pda, false),   // pub game_state: AccountInfo<'info>,
-            AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
-        ],
-        data: InitGameState {
-            _input: InitGameStateInput {
-                key_index: 2, // SAGE_MANAGER
-            },
-        }
-        .data(),
-    };
-
-    let message = Message::new(&[init_game_state_ix], Some(&wallet_pk));
-    let tx = Transaction::new(
-        &[&authority_kp, &wallet_kp],
-        message,
-        svm.latest_blockhash(),
-    );
-    let tx_result = svm.send_transaction(tx);
-    assert!(tx_result.is_ok());
+    // starbased-sdk: admin create game state
+    let game_state_pk = based_sdk::admin::CreateGameState::new(
+        &authority_kp,
+        &player_profile_pk,
+        &game_pk,
+        &wallet_kp,
+    )
+    .set_game_update_id(game_data.update_id)
+    .set_profile_key_index(2) // SAGE_MANAGER
+    .send(&mut svm)
+    .unwrap();
+    dbg!(&game_state_pk);
 
     // update game state
     let update_game_state_ix = Instruction {
@@ -317,7 +294,7 @@ fn sage_test() {
             AccountMeta::new_readonly(authority_pk, true), // UpdateGameStateGameAndProfile<'info> pub key: Signer<'info>,
             AccountMeta::new_readonly(player_profile_pk, false), // UpdateGameStateGameAndProfile<'info>pub profile: AccountInfo<'info>,
             AccountMeta::new_readonly(game_pk, false), // UpdateGameStateGameAndProfile<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new(game_state_pda, false),   // pub game_state: AccountInfo<'info>,
+            AccountMeta::new(game_state_pk, false),    // pub game_state: AccountInfo<'info>,
             AccountMeta::new(Pubkey::default(), false), // old_recipe_for_upgrade
             AccountMeta::new(Pubkey::default(), false), // new_recipe_for_upgrade
             AccountMeta::new(Pubkey::default(), false), // recipe_category_for_level
@@ -407,84 +384,41 @@ fn sage_test() {
     let tx_result = svm.send_transaction(tx);
     assert!(tx_result.is_ok());
 
-    // activate game state
-    let activate_game_state_ix = Instruction {
-        program_id: SAGE_PROGRAM_ID,
-        accounts: vec![
-            AccountMeta::new_readonly(authority_pk, true), // ActivateGameStateGameAndProfile<'info> pub key: Signer<'info>,
-            AccountMeta::new_readonly(player_profile_pk, false), // ActivateGameStateGameAndProfile<'info>pub profile: AccountInfo<'info>,
-            AccountMeta::new(game_pk, false), // ActivateGameStateGameAndProfile<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new(game_state_pda, false), // pub game_state: AccountInfo<'info>,
-        ],
-        data: ActivateGameState {
-            _input: ManageGameInput {
-                key_index: 2, // SAGE_MANAGER
-            },
-        }
-        .data(),
-    };
+    // starbased-sdk: admin activate game state
+    let _ = based_sdk::admin::ActivateGameState::new(
+        &authority_kp,
+        &player_profile_pk,
+        &game_pk,
+        &game_state_pk,
+        &wallet_kp,
+    )
+    .set_profile_key_index(2) // SAGE_MANAGER
+    .send(&mut svm)
+    .unwrap();
 
-    let message = Message::new(&[activate_game_state_ix], Some(&wallet_pk));
-    let tx = Transaction::new(
-        &[&authority_kp, &wallet_kp],
-        message,
-        svm.latest_blockhash(),
-    );
-    let tx_result = svm.send_transaction(tx);
-    assert!(tx_result.is_ok());
-
-    let game_state_acc = svm.get_account(&game_state_pda).unwrap();
+    let game_state_acc = svm.get_account(&game_state_pk).unwrap();
     let game_state_data = GameState::try_deserialize(&mut &game_state_acc.data[..]).unwrap();
     assert_eq!(game_pk.as_ref(), game_state_data.game_id.as_ref());
 
-    // register sector
-    let (sector_pda, _bump) = Pubkey::find_program_address(
-        &[
-            b"Sector",
-            game_pk.as_ref(),
-            &(1_i64).to_le_bytes(),
-            &(1_i64).to_le_bytes(),
-        ],
-        &SAGE_PROGRAM_ID,
-    );
-
-    let register_sector_ix = Instruction {
-        program_id: SAGE_PROGRAM_ID,
-        accounts: vec![
-            AccountMeta::new_readonly(authority_pk, true), // RegisterSectorGameAndProfile<'info> pub key: Signer<'info>,
-            AccountMeta::new_readonly(player_profile_pk, false), // RegisterSectorGameAndProfile<'info>pub profile: AccountInfo<'info>,
-            AccountMeta::new_readonly(game_pk, false), // RegisterSectorGameAndProfile<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new(wallet_pk, true),         // pub funder: Signer<'info>,
-            AccountMeta::new_readonly(player_profile_pk, false), // pub discoverer: AccountInfo<'info>,
-            AccountMeta::new(sector_pda, false),                 // pub sector: AccountInfo<'info>
-            AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
-        ],
-        data: RegisterSector {
-            _coordinates: [1, 1],
-            _name: {
-                let mut name = [0u8; 64];
-                let sector_name = b"Super Sector";
-                name[..sector_name.len()].copy_from_slice(sector_name);
-                name
-            },
-            _key_index: 2, // SAGE_MANAGER
-        }
-        .data(),
-    };
-
-    let message = Message::new(&[register_sector_ix], Some(&wallet_pk));
-    let tx = Transaction::new(
-        &[&authority_kp, &wallet_kp],
-        message,
-        svm.latest_blockhash(),
-    );
-    let tx_result = svm.send_transaction(tx);
-    assert!(tx_result.is_ok());
+    // starbased-sdk: admin register sector
+    let sector_pk = based_sdk::admin::RegisterSector::new(
+        &authority_kp,
+        &player_profile_pk,
+        &player_profile_pk, // discoverer
+        &game_pk,
+        &wallet_kp,
+    )
+    .set_coordinates([1, 1])
+    .set_name("Super Sector".into())
+    .set_profile_key_index(2) // SAGE_MANAGER
+    .send(&mut svm)
+    .unwrap();
+    dbg!(sector_pk);
 
     // TODO: setup crew (fleetCRUD.test.ts 868)
 
     // create starbase
-    let sector_acc = svm.get_account(&sector_pda).unwrap();
+    let sector_acc = svm.get_account(&sector_pk).unwrap();
     let sector_data = Sector::try_deserialize(&mut &sector_acc.data[..]).unwrap();
     assert_eq!(game_pk.as_ref(), sector_data.game_id.as_ref());
 
@@ -503,11 +437,11 @@ fn sage_test() {
         accounts: vec![
             AccountMeta::new(wallet_pk, true),     // pub funder: Signer<'info>,
             AccountMeta::new(starbase_pda, false), // pub starbase: AccountInfo<'info>,
-            AccountMeta::new_readonly(sector_pda, false), // pub sector: AccountInfo<'info>
+            AccountMeta::new_readonly(sector_pk, false), // pub sector: AccountInfo<'info>
             AccountMeta::new_readonly(authority_pk, true), // RegisterStarbaseGameStateAndProfileGameAndProfile<'info> pub key: Signer<'info>,
             AccountMeta::new_readonly(player_profile_pk, false), // RegisterStarbaseGameStateAndProfileGameAndProfile<'info> pub profile: AccountInfo<'info>,
             AccountMeta::new_readonly(game_pk, false), // RegisterStarbaseGameStateAndProfileGameAndProfile<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new_readonly(game_state_pda, false), // pub game_state: AccountInfo<'info>,
+            AccountMeta::new_readonly(game_state_pk, false), // pub game_state: AccountInfo<'info>,
             AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
         ],
         data: RegisterStarbase {
@@ -553,7 +487,7 @@ fn sage_test() {
             AccountMeta::new(wallet_pk, true),                   // pub funder: Signer<'info>,
             AccountMeta::new(sage_player_profile_pda, false), // pub sage_player_profile: AccountInfo<'info>,
             AccountMeta::new_readonly(game_pk, false), // RegisterSagePlayerProfileGameAccounts<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new_readonly(game_state_pda, false), // RegisterSagePlayerProfileGameAccounts<'info> pub game_state: AccountInfo<'info>,
+            AccountMeta::new_readonly(game_state_pk, false), // RegisterSagePlayerProfileGameAccounts<'info> pub game_state: AccountInfo<'info>,
             AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
         ],
         data: RegisterSagePlayerProfile {}.data(),
@@ -581,7 +515,7 @@ fn sage_test() {
         accounts: vec![
             AccountMeta::new(wallet_pk, true), // pub funder: Signer<'info>,
             AccountMeta::new_readonly(game_pk, false), // RegisterStarbasePlayerGameAccounts<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new_readonly(game_state_pda, false), // RegisterStarbasePlayerGameAccounts<'info> pub game_state: AccountInfo<'info>,
+            AccountMeta::new_readonly(game_state_pk, false), // RegisterStarbasePlayerGameAccounts<'info> pub game_state: AccountInfo<'info>,
             AccountMeta::new_readonly(sage_player_profile_pda, false), // pub sage_player_profile: AccountInfo<'info>,
             AccountMeta::new_readonly(player_faction_pda, false), // pub profile_faction: AccountInfo<'info>,
             AccountMeta::new_readonly(starbase_pda, false), // pub starbase: AccountInfo<'info>,
