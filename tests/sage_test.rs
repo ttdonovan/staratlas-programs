@@ -24,14 +24,10 @@ use staratlas_crew::state::CrewConfig;
 use staratlas_player_profile::{instruction::CreateProfile, typedefs::AddKeyInput};
 use staratlas_profile_faction::{instruction::ChooseFaction, typedefs::Faction};
 use staratlas_sage::{
-    instruction::{
-        RegisterSagePlayerProfile, RegisterStarbase, RegisterStarbasePlayer, UpdateGame,
-        UpdateGameState,
-    },
+    instruction::{RegisterSagePlayerProfile, RegisterStarbasePlayer, UpdateGame, UpdateGameState},
     state::{Game, GameState, Sector},
     typedefs::{
-        FleetInput, RegisterStarbaseInputUnpacked, SectorRing, StarbaseLevelInfoArrayInput,
-        UpdateGameInput, UpdateGameStateInput,
+        FleetInput, SectorRing, StarbaseLevelInfoArrayInput, UpdateGameInput, UpdateGameStateInput,
     },
 };
 
@@ -422,53 +418,24 @@ fn sage_test() {
     let sector_data = Sector::try_deserialize(&mut &sector_acc.data[..]).unwrap();
     assert_eq!(game_pk.as_ref(), sector_data.game_id.as_ref());
 
-    let (starbase_pda, _bump) = Pubkey::find_program_address(
-        &[
-            b"Starbase",
-            game_pk.as_ref(),
-            &sector_data.coordinates[0].to_le_bytes(),
-            &sector_data.coordinates[1].to_le_bytes(),
-        ],
-        &SAGE_PROGRAM_ID,
-    );
-
-    let register_starbase_ix = Instruction {
-        program_id: SAGE_PROGRAM_ID,
-        accounts: vec![
-            AccountMeta::new(wallet_pk, true),     // pub funder: Signer<'info>,
-            AccountMeta::new(starbase_pda, false), // pub starbase: AccountInfo<'info>,
-            AccountMeta::new_readonly(sector_pk, false), // pub sector: AccountInfo<'info>
-            AccountMeta::new_readonly(authority_pk, true), // RegisterStarbaseGameStateAndProfileGameAndProfile<'info> pub key: Signer<'info>,
-            AccountMeta::new_readonly(player_profile_pk, false), // RegisterStarbaseGameStateAndProfileGameAndProfile<'info> pub profile: AccountInfo<'info>,
-            AccountMeta::new_readonly(game_pk, false), // RegisterStarbaseGameStateAndProfileGameAndProfile<'info> pub game_id: AccountInfo<'info>,
-            AccountMeta::new_readonly(game_state_pk, false), // pub game_state: AccountInfo<'info>,
-            AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
-        ],
-        data: RegisterStarbase {
-            _input: RegisterStarbaseInputUnpacked {
-                name: {
-                    let mut name = [0u8; 64];
-                    let starbase_name = b"Starbase Alpha";
-                    name[..starbase_name.len()].copy_from_slice(starbase_name);
-                    name
-                },
-                sub_coordinates: [1, 1],
-                starbase_level_index: 6,
-                faction: Faction::Ustur as u8,
-                key_index: 2, // SAGE_MANAGER
-            },
-        }
-        .data(),
-    };
-
-    let message = Message::new(&[register_starbase_ix], Some(&wallet_pk));
-    let tx = Transaction::new(
-        &[&wallet_kp, &authority_kp],
-        message,
-        svm.latest_blockhash(),
-    );
-    let tx_result = svm.send_transaction(tx);
-    assert!(tx_result.is_ok());
+    // starbased-sdk: admin register starbase
+    let starbase_pk = based_sdk::admin::RegisterStarbase::new(
+        &authority_kp,
+        &player_profile_pk,
+        &game_pk,
+        &game_state_pk,
+        &sector_pk,
+        &wallet_kp,
+    )
+    .set_coordinates([1, 1])
+    .set_name("Starbase Alpha".into())
+    .set_sub_coordinates([1, 1])
+    .set_starbase_level_index(6)
+    .set_faction(Faction::Ustur as u8)
+    .set_profile_key_index(2) // SAGE_MANAGER
+    .send(&mut svm)
+    .unwrap();
+    dbg!(starbase_pk);
 
     // create sage player profile
     let (sage_player_profile_pda, _bump) = Pubkey::find_program_address(
@@ -503,7 +470,7 @@ fn sage_test() {
     let (starbase_player_pda, _bump) = Pubkey::find_program_address(
         &[
             b"starbase_player",
-            starbase_pda.as_ref(),
+            starbase_pk.as_ref(),
             sage_player_profile_pda.as_ref(),
             &starbase_seq_id.to_le_bytes(),
         ],
@@ -518,7 +485,7 @@ fn sage_test() {
             AccountMeta::new_readonly(game_state_pk, false), // RegisterStarbasePlayerGameAccounts<'info> pub game_state: AccountInfo<'info>,
             AccountMeta::new_readonly(sage_player_profile_pda, false), // pub sage_player_profile: AccountInfo<'info>,
             AccountMeta::new_readonly(player_faction_pda, false), // pub profile_faction: AccountInfo<'info>,
-            AccountMeta::new_readonly(starbase_pda, false), // pub starbase: AccountInfo<'info>,
+            AccountMeta::new_readonly(starbase_pk, false), // pub starbase: AccountInfo<'info>,
             AccountMeta::new(starbase_player_pda, false), // pub starbase_player: AccountInfo<'info>,
             AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
         ],
