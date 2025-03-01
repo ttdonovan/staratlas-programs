@@ -66,11 +66,19 @@ fn sage_test() {
     svm.add_program(PROFILE_FACTION_PROGRAM_ID, PROFILE_FACTION_PROGRAM_BYTES);
     svm.add_program(SAGE_PROGRAM_ID, SAGE_PROGRAM_BYTES);
 
+    // starbased-sdk: profile create profile (player)
+    let player_profile_kp = Keypair::new();
+    let player_profile_pk = based_sdk::profile::CreateProfile::new(&wallet_kp)
+        .set_profile_kp(player_profile_kp)
+        .send(&mut svm)
+        .unwrap();
+    dbg!(&player_profile_pk);
+
     let authority_kp = Keypair::new();
     let authority_pk = authority_kp.pubkey();
 
-    let player_profile_kp = Keypair::new();
-    let player_profile_pk = player_profile_kp.pubkey();
+    let sage_profile_kp = Keypair::new();
+    let sage_profile_pk = sage_profile_kp.pubkey();
 
     // TODO: create a "super" user profile
     // // Cargo Superuser // 1
@@ -119,7 +127,7 @@ fn sage_test() {
         program_id: PLAYER_PROFILE_PROGRAM_ID,
         accounts: vec![
             AccountMeta::new(wallet_pk, true), // funder (writable, signer)
-            AccountMeta::new(player_profile_pk, true), // profile (writable, signer)
+            AccountMeta::new(sage_profile_pk, true), // profile (writable, signer)
             AccountMeta::new_readonly(system_program::ID, false), // system program
             AccountMeta::new(authority_pk, true), // auth authority (writable, signer)
             AccountMeta::new(authority_pk, true), // cargo manager (writable, signer)
@@ -191,7 +199,7 @@ fn sage_test() {
 
     let message = Message::new(&[create_profile_ix], Some(&wallet_pk));
     let tx = Transaction::new(
-        &[&wallet_kp, &player_profile_kp, &authority_kp],
+        &[&wallet_kp, &sage_profile_kp, &authority_kp],
         message,
         svm.latest_blockhash(),
     );
@@ -199,7 +207,7 @@ fn sage_test() {
     assert!(tx_result.is_ok());
 
     let (player_faction_pda, _bump) = Pubkey::find_program_address(
-        &[b"player_faction", player_profile_pk.as_ref()],
+        &[b"player_faction", sage_profile_pk.as_ref()],
         &PROFILE_FACTION_PROGRAM_ID,
     );
 
@@ -208,7 +216,7 @@ fn sage_test() {
         accounts: vec![
             AccountMeta::new(authority_pk, true), // pub key: Signer<'info>,
             AccountMeta::new(wallet_pk, true),    // pub funder: Signer<'info>,
-            AccountMeta::new(player_profile_pk, false), // pub profile: AccountInfo<'info>,
+            AccountMeta::new(sage_profile_pk, false), // pub profile: AccountInfo<'info>,
             AccountMeta::new(player_faction_pda, false), // pub faction: AccountInfo<'info>,
             AccountMeta::new_readonly(system_program::ID, false), // system program
         ],
@@ -235,8 +243,8 @@ fn sage_test() {
     let init_definition_ix = Instruction {
         program_id: CARGO_PROGRAM_ID,
         accounts: vec![
-            AccountMeta::new(player_profile_pk, false), // pub profile: AccountInfo<'info>,
-            AccountMeta::new(wallet_pk, true),          // pub funder: Signer<'info>,
+            AccountMeta::new(sage_profile_pk, false), // pub profile: AccountInfo<'info>,
+            AccountMeta::new(wallet_pk, true),        // pub funder: Signer<'info>,
             AccountMeta::new(cargo_stats_definition_pk, true), // pub stats_definition: Signer<'info>,
             AccountMeta::new_readonly(system_program::ID, false), // pub system_program: AccountInfo<'info>,
         ],
@@ -257,14 +265,10 @@ fn sage_test() {
 
     // starbased-sdk: admin create game
     let game_kp = Keypair::new();
-    let game_pk = based_sdk::admin::CreateGame::new(
-        &authority_kp,
-        &player_profile_pk, // TODO: rename to 'sage_profile_pk'?
-        &wallet_kp,
-    )
-    .set_game_kp(game_kp)
-    .send(&mut svm)
-    .unwrap();
+    let game_pk = based_sdk::admin::CreateGame::new(&authority_kp, &sage_profile_pk, &wallet_kp)
+        .set_game_kp(game_kp)
+        .send(&mut svm)
+        .unwrap();
     dbg!(&game_pk);
 
     let game_acc = svm.get_account(&game_pk).unwrap();
@@ -273,7 +277,7 @@ fn sage_test() {
     // starbased-sdk: admin create game state
     let game_state_pk = based_sdk::admin::CreateGameState::new(
         &authority_kp,
-        &player_profile_pk,
+        &sage_profile_pk,
         &game_pk,
         &wallet_kp,
     )
@@ -288,7 +292,7 @@ fn sage_test() {
         program_id: SAGE_PROGRAM_ID,
         accounts: vec![
             AccountMeta::new_readonly(authority_pk, true), // UpdateGameStateGameAndProfile<'info> pub key: Signer<'info>,
-            AccountMeta::new_readonly(player_profile_pk, false), // UpdateGameStateGameAndProfile<'info>pub profile: AccountInfo<'info>,
+            AccountMeta::new_readonly(sage_profile_pk, false), // UpdateGameStateGameAndProfile<'info>pub profile: AccountInfo<'info>,
             AccountMeta::new_readonly(game_pk, false), // UpdateGameStateGameAndProfile<'info> pub game_id: AccountInfo<'info>,
             AccountMeta::new(game_state_pk, false),    // pub game_state: AccountInfo<'info>,
             AccountMeta::new(Pubkey::default(), false), // old_recipe_for_upgrade
@@ -348,7 +352,7 @@ fn sage_test() {
         program_id: SAGE_PROGRAM_ID,
         accounts: vec![
             AccountMeta::new_readonly(authority_pk, true), // UpdateGameGameAndProfile<'info> pub key: Signer<'info>,
-            AccountMeta::new_readonly(player_profile_pk, false), // UpdateGameGameAndProfile<'info>pub profile: AccountInfo<'info>,
+            AccountMeta::new_readonly(sage_profile_pk, false), // UpdateGameGameAndProfile<'info>pub profile: AccountInfo<'info>,
             AccountMeta::new(game_pk, false), // UpdateGameGameAndProfile<'info> pub game_id: AccountInfo<'info>,
             // // Add the mint accounts as remaining_accounts
             // AccountMeta::new_readonly(ammo_pk, false),
@@ -383,7 +387,7 @@ fn sage_test() {
     // starbased-sdk: admin activate game state
     let _ = based_sdk::admin::ActivateGameState::new(
         &authority_kp,
-        &player_profile_pk,
+        &sage_profile_pk,
         &game_pk,
         &game_state_pk,
         &wallet_kp,
@@ -399,8 +403,8 @@ fn sage_test() {
     // starbased-sdk: admin register sector
     let sector_pk = based_sdk::admin::RegisterSector::new(
         &authority_kp,
-        &player_profile_pk,
-        &player_profile_pk, // discoverer
+        &sage_profile_pk,
+        &sage_profile_pk, // discoverer
         &game_pk,
         &wallet_kp,
     )
@@ -421,7 +425,7 @@ fn sage_test() {
     // starbased-sdk: admin register starbase
     let starbase_pk = based_sdk::admin::RegisterStarbase::new(
         &authority_kp,
-        &player_profile_pk,
+        &sage_profile_pk,
         &game_pk,
         &game_state_pk,
         &sector_pk,
@@ -441,7 +445,7 @@ fn sage_test() {
     let (sage_player_profile_pda, _bump) = Pubkey::find_program_address(
         &[
             b"sage_player_profile",
-            player_profile_pk.as_ref(),
+            sage_profile_pk.as_ref(),
             game_pk.as_ref(),
         ],
         &SAGE_PROGRAM_ID,
@@ -450,8 +454,8 @@ fn sage_test() {
     let register_sage_player_profile_ix = Instruction {
         program_id: SAGE_PROGRAM_ID,
         accounts: vec![
-            AccountMeta::new_readonly(player_profile_pk, false), // pub profile: AccountInfo<'info>,
-            AccountMeta::new(wallet_pk, true),                   // pub funder: Signer<'info>,
+            AccountMeta::new_readonly(sage_profile_pk, false), // pub profile: AccountInfo<'info>,
+            AccountMeta::new(wallet_pk, true),                 // pub funder: Signer<'info>,
             AccountMeta::new(sage_player_profile_pda, false), // pub sage_player_profile: AccountInfo<'info>,
             AccountMeta::new_readonly(game_pk, false), // RegisterSagePlayerProfileGameAccounts<'info> pub game_id: AccountInfo<'info>,
             AccountMeta::new_readonly(game_state_pk, false), // RegisterSagePlayerProfileGameAccounts<'info> pub game_state: AccountInfo<'info>,
@@ -498,7 +502,7 @@ fn sage_test() {
     assert!(tx_result.is_ok());
 
     let (crew_config_ix, crew_merkle_tree_pk) =
-        helpers::setup_crew_config_instructions(&player_profile_pk, &wallet_pk, &game_pk);
+        helpers::setup_crew_config_instructions(&sage_profile_pk, &wallet_pk, &game_pk);
 
     let tx = Transaction::new_signed_with_payer(
         &[crew_config_ix],

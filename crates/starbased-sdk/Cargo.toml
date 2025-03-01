@@ -7,4 +7,5 @@ edition = "2021"
 anchor-lang.workspace = true
 litesvm.workspace = true
 solana-sdk.workspace = true
+staratlas-player-profile.workspace = true
 staratlas-sage.workspace = true

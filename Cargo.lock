@@ -4831,6 +4831,7 @@ dependencies = [
  "anchor-lang",
  "litesvm",
  "solana-sdk",
+ "staratlas-player-profile",
  "staratlas-sage",
 ]
 
