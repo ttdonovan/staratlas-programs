@@ -84,7 +84,7 @@ impl<'a> CreateGameState<'a> {
         let tx = Transaction::new_signed_with_payer(
             &[ix],
             Some(&funder_pk),
-            &[&self.authority_kp, &self.funder_kp],
+            &[self.authority_kp, self.funder_kp],
             block_hash,
         );
         svm.send_transaction(tx)?;

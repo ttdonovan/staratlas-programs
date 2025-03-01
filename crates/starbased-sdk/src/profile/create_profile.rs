@@ -16,28 +16,21 @@ use staratlas_player_profile::{
 };
 
 pub struct CreateProfile<'a> {
+    profile_kp: &'a Keypair,
     funder_kp: &'a Keypair,
-    profile_kp: Option<Keypair>,
 }
 
 impl<'a> CreateProfile<'a> {
-    pub fn new(funder_kp: &'a Keypair) -> Self {
+    pub fn new(profile_kp: &'a Keypair, funder_kp: &'a Keypair) -> Self {
         CreateProfile {
+            profile_kp,
             funder_kp,
-            profile_kp: None,
         }
-    }
-
-    pub fn set_profile_kp(mut self, profile_kp: Keypair) -> Self {
-        self.profile_kp = Some(profile_kp);
-        self
     }
 
     pub fn send(self, svm: &mut LiteSVM) -> Result<Pubkey, FailedTransactionMetadata> {
         let funder_pk = self.funder_kp.pubkey();
-
-        let profile_kp = self.profile_kp.unwrap_or(Keypair::new());
-        let profile_pk = profile_kp.pubkey();
+        let profile_pk = self.profile_kp.pubkey();
 
         let ix = Instruction {
             program_id: PLAYER_PROFILE_PROGRAM_ID,
@@ -65,7 +58,7 @@ impl<'a> CreateProfile<'a> {
         let tx = Transaction::new_signed_with_payer(
             &[ix],
             Some(&funder_pk),
-            &[&profile_kp, &self.funder_kp],
+            &[self.profile_kp, self.funder_kp],
             block_hash,
         );
         svm.send_transaction(tx)?;

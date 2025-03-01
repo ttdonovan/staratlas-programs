@@ -69,7 +69,7 @@ impl<'a> ActivateGameState<'a> {
         let tx = Transaction::new_signed_with_payer(
             &[ix],
             Some(&payer_pk),
-            &[&self.authority_kp, &self.payer_kp],
+            &[self.authority_kp, self.payer_kp],
             block_hash,
         );
         svm.send_transaction(tx)?;

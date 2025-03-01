@@ -68,8 +68,7 @@ fn sage_test() {
 
     // starbased-sdk: profile create profile (player)
     let player_profile_kp = Keypair::new();
-    let player_profile_pk = based_sdk::profile::CreateProfile::new(&wallet_kp)
-        .set_profile_kp(player_profile_kp)
+    let player_profile_pk = based_sdk::profile::CreateProfile::new(&player_profile_kp, &wallet_kp)
         .send(&mut svm)
         .unwrap();
     dbg!(&player_profile_pk);
@@ -207,16 +206,16 @@ fn sage_test() {
     assert!(tx_result.is_ok());
 
     let (player_faction_pda, _bump) = Pubkey::find_program_address(
-        &[b"player_faction", sage_profile_pk.as_ref()],
+        &[b"player_faction", player_profile_pk.as_ref()],
         &PROFILE_FACTION_PROGRAM_ID,
     );
 
     let choose_faction_ix = Instruction {
         program_id: PROFILE_FACTION_PROGRAM_ID,
         accounts: vec![
-            AccountMeta::new(authority_pk, true), // pub key: Signer<'info>,
-            AccountMeta::new(wallet_pk, true),    // pub funder: Signer<'info>,
-            AccountMeta::new(sage_profile_pk, false), // pub profile: AccountInfo<'info>,
+            AccountMeta::new(player_profile_pk, true), // pub key: Signer<'info>,
+            AccountMeta::new(wallet_pk, true),         // pub funder: Signer<'info>,
+            AccountMeta::new(player_profile_pk, false), // pub profile: AccountInfo<'info>,
             AccountMeta::new(player_faction_pda, false), // pub faction: AccountInfo<'info>,
             AccountMeta::new_readonly(system_program::ID, false), // system program
         ],
@@ -229,7 +228,7 @@ fn sage_test() {
 
     let message = Message::new(&[choose_faction_ix], Some(&wallet_pk));
     let tx = Transaction::new(
-        &[&authority_kp, &wallet_kp],
+        &[&player_profile_kp, &wallet_kp],
         message,
         svm.latest_blockhash(),
     );
@@ -445,7 +444,7 @@ fn sage_test() {
     let (sage_player_profile_pda, _bump) = Pubkey::find_program_address(
         &[
             b"sage_player_profile",
-            sage_profile_pk.as_ref(),
+            player_profile_pk.as_ref(),
             game_pk.as_ref(),
         ],
         &SAGE_PROGRAM_ID,
@@ -454,8 +453,8 @@ fn sage_test() {
     let register_sage_player_profile_ix = Instruction {
         program_id: SAGE_PROGRAM_ID,
         accounts: vec![
-            AccountMeta::new_readonly(sage_profile_pk, false), // pub profile: AccountInfo<'info>,
-            AccountMeta::new(wallet_pk, true),                 // pub funder: Signer<'info>,
+            AccountMeta::new_readonly(player_profile_pk, false), // pub profile: AccountInfo<'info>,
+            AccountMeta::new(wallet_pk, true),                   // pub funder: Signer<'info>,
             AccountMeta::new(sage_player_profile_pda, false), // pub sage_player_profile: AccountInfo<'info>,
             AccountMeta::new_readonly(game_pk, false), // RegisterSagePlayerProfileGameAccounts<'info> pub game_id: AccountInfo<'info>,
             AccountMeta::new_readonly(game_state_pk, false), // RegisterSagePlayerProfileGameAccounts<'info> pub game_state: AccountInfo<'info>,
