@@ -1,0 +1,11 @@
+[package]
+name = "staratlas-fleet-rentals"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+no-entrypoint = []
+
+[dependencies]
+anchor-gen = { workspace = true }
+anchor-lang = { workspace = true }

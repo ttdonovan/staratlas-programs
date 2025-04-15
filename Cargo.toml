@@ -9,7 +9,9 @@ members = ["crates/*", "programs/*"]
 
 [workspace.dependencies]
 anchor-gen = "0.3.1"
-anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
+anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11", features = [
+    "derive",
+] }
 litesvm = "0.6"
 solana-sdk = "2.2.1"
 staratlas-player-profile = { path = "programs/player-profile", features = [
@@ -26,6 +28,7 @@ flate2 = "1.1"
 litesvm = "0.6"
 # litesvm-token = { git = "https://github.com/LiteSVM/litesvm", rev = "7e3d9a8" }
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 solana-account-decoder = "2.2"
 solana-client = "2.2"
 solana-sdk = "2.2"
@@ -33,6 +36,9 @@ spl-associated-token-account-client = "2.0.0"
 spl-token = "7.0.0"
 staratlas-cargo = { path = "programs/cargo", features = ["no-entrypoint"] }
 staratlas-crew = { path = "programs/crew", features = ["no-entrypoint"] }
+staratlas-fleet-rentals = { path = "programs/fleet-rentals", features = [
+    "no-entrypoint",
+] }
 staratlas-player-profile = { path = "programs/player-profile", features = [
     "no-entrypoint",
 ] }
@@ -41,3 +47,5 @@ staratlas-profile-faction = { path = "programs/profile-faction", features = [
 ] }
 staratlas-sage = { path = "programs/sage", features = ["no-entrypoint"] }
 staratlas-starbased-sdk = { path = "crates/starbased-sdk" }
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
+tokio = { version = "1.44", features = ["full"] }
