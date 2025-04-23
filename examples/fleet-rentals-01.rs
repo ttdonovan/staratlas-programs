@@ -6,8 +6,8 @@ use solana_client::{
     rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType},
 };
 use solana_sdk::{account::Account, commitment_config::CommitmentConfig, pubkey::Pubkey};
-use sqlx::sqlite::SqlitePoolOptions;
 
+use common_core::{solana_rpc_client, sqlite_pool};
 use staratlas_fleet_rentals::{seeds, ID as FLEET_RENTALS_ID};
 use staratlas_sage::{
     state::{Fleet, FleetShips, Ship},
@@ -81,20 +81,10 @@ async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
     let database_url = dotenv::var("DATABASE_URL")?;
-    let pool = SqlitePoolOptions::new().connect(&database_url).await?;
-
-    sqlx::query(
-        r#"
-        PRAGMA synchronous=NORMAL;
-        PRAGMA journal_mode=WAL;
-        PRAGMA temp_store=MEMORY;
-        "#,
-    )
-    .execute(&pool)
-    .await?;
+    let pool = sqlite_pool(&database_url).await?;
 
     let rpc_url = dotenv::var("RPC")?;
-    let client = RpcClient::new_with_commitment(rpc_url, CommitmentConfig::confirmed());
+    let client = solana_rpc_client(&rpc_url).await?;
 
     let accounts = get_program_accounts(
         &client,

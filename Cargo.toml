@@ -5,26 +5,31 @@ edition = "2021"
 publish = false
 
 [workspace]
-members = ["crates/*", "programs/*"]
+members = ["common/*", "crates/*", "programs/*"]
 
 [workspace.dependencies]
 anchor-gen = "0.3.1"
 anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11", features = [
     "derive",
 ] }
+anyhow = "1.0"
 litesvm = "0.6"
+solana-client = "2.2"
 solana-sdk = "2.2.1"
 staratlas-player-profile = { path = "programs/player-profile", features = [
     "no-entrypoint",
 ] }
 staratlas-sage = { path = "programs/sage", features = ["no-entrypoint"] }
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
 
 [dev-dependencies]
 anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
 anyhow = "1.0"
+common-core = { path = "common/core" }
 bincode = "2.0"
 dotenv = "0.15"
 flate2 = "1.1"
+futures-util = "0.3"
 litesvm = "0.6"
 # litesvm-token = { git = "https://github.com/LiteSVM/litesvm", rev = "7e3d9a8" }
 serde = { version = "1.0", features = ["derive"] }

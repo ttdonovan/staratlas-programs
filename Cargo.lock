@@ -983,6 +983,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "common-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "solana-client",
+ "solana-sdk",
+ "sqlx",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7019,8 +7029,10 @@ dependencies = [
  "anchor-lang",
  "anyhow",
  "bincode 2.0.1",
+ "common-core",
  "dotenv",
  "flate2",
+ "futures-util",
  "litesvm",
  "serde",
  "serde_json",
