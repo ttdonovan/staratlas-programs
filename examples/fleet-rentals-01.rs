@@ -8,10 +8,10 @@ use solana_client::{
 use solana_sdk::{account::Account, commitment_config::CommitmentConfig, pubkey::Pubkey};
 
 use common_core::{solana_rpc_client, sqlite_pool};
-use staratlas_fleet_rentals::{seeds, ID as FLEET_RENTALS_ID};
+use staratlas_fleet_rentals::{ID as FLEET_RENTALS_ID, seeds};
 use staratlas_sage::{
-    state::{Fleet, FleetShips, Ship},
     ID as SAGE_ID,
+    state::{Fleet, FleetShips, Ship},
 };
 
 const UPSERT_FLEET_RENTALS_SQL: &str = r#"

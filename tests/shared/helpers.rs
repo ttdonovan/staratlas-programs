@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use anchor_lang::InstructionData;
-use litesvm::{types::FailedTransactionMetadata, LiteSVM};
+use litesvm::{LiteSVM, types::FailedTransactionMetadata};
 use solana_sdk::{
     instruction::{AccountMeta, Instruction},
     program_pack::Pack,
@@ -20,7 +20,7 @@ pub fn create_mint<'a>(
     decimals: u8,
     authority_pk: &'a Pubkey,
 ) -> Result<Pubkey, FailedTransactionMetadata> {
-    use spl_token::{instruction::initialize_mint2, state::Mint, ID as TOKEN_PROGRAM_ID};
+    use spl_token::{ID as TOKEN_PROGRAM_ID, instruction::initialize_mint2, state::Mint};
 
     let mint_size = Mint::LEN;
     let mint_pk = mint_kp.pubkey();

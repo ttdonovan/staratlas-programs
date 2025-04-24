@@ -8,8 +8,8 @@ use solana_client::{
 use solana_sdk::{account::Account, commitment_config::CommitmentConfig, pubkey::Pubkey};
 
 use staratlas_player_profile::{
-    state::{PlayerName, Profile},
     ID as PLAYER_PROFILE_ID,
+    state::{PlayerName, Profile},
 };
 
 fn get_program_accounts<T: Discriminator>(

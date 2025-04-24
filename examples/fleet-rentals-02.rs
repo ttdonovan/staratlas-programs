@@ -1,8 +1,8 @@
 use anchor_lang::prelude::{AnchorDeserialize, Discriminator};
 use dotenv::dotenv;
 use sqlx::{
-    sqlite::{SqlitePool, SqlitePoolOptions},
     Row,
+    sqlite::{SqlitePool, SqlitePoolOptions},
 };
 
 use staratlas_fleet_rentals::{seeds, state::ContractState};

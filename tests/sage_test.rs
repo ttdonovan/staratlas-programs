@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::Pubkey as AnchorPubkey, AccountDeserialize, InstructionData};
+use anchor_lang::{AccountDeserialize, InstructionData, prelude::Pubkey as AnchorPubkey};
 use litesvm::LiteSVM;
 use solana_sdk::{
     account::Account,
@@ -15,8 +15,8 @@ use solana_sdk::{
 };
 use spl_associated_token_account_client::address::get_associated_token_address;
 use spl_token::{
-    state::{Account as TokenAccount, AccountState},
     ID as TOKEN_PROGRAM_ID,
+    state::{Account as TokenAccount, AccountState},
 };
 
 use staratlas_cargo::{instruction::InitDefinition, typedefs::InitDefinitionInput};

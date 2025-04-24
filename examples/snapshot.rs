@@ -1,7 +1,7 @@
 use anchor_lang::Discriminator;
 use bincode::{Decode, Encode};
 use dotenv::dotenv;
-use flate2::{read::GzDecoder, write::GzEncoder, Compression};
+use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 use serde::{Deserialize, Serialize};
 use solana_client::{
     rpc_client::RpcClient,
@@ -14,12 +14,12 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use staratlas_sage::{
+    ID as SAGE_ID,
     state::{
         CraftingInstance, DisbandedFleet, Fleet, FleetShips, Game, GameState, MineItem, Planet,
         PlayerCrewRecord, ProgressionConfig, Resource, SageCrewConfig, SagePlayerProfile, Sector,
         Ship, Star, Starbase, StarbasePlayer, SurveyDataUnitTracker,
     },
-    ID as SAGE_ID,
 };
 
 // Create serializable wrapper types for Solana types

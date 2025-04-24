@@ -1,11 +1,17 @@
 [package]
 name = "staratlas-programs"
 version = "0.0.0"
-edition = "2021"
+edition = "2024"
 publish = false
 
 [workspace]
-members = ["common/*", "crates/*", "programs/*"]
+members = [
+    "common/*",
+    "crates/*",
+    "galactic-rs/*",
+    "galactic-rs/sage-game",
+    "programs/*",
+]
 
 [workspace.dependencies]
 anchor-gen = "0.3.1"
@@ -13,7 +19,11 @@ anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11", fe
     "derive",
 ] }
 anyhow = "1.0"
+common-core = { path = "common/core" }
+dotenv = "0.15"
+futures-util = "0.3"
 litesvm = "0.6"
+solana-account-decoder = "2.2"
 solana-client = "2.2"
 solana-sdk = "2.2.1"
 staratlas-player-profile = { path = "programs/player-profile", features = [
@@ -21,15 +31,14 @@ staratlas-player-profile = { path = "programs/player-profile", features = [
 ] }
 staratlas-sage = { path = "programs/sage", features = ["no-entrypoint"] }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
+tokio = { version = "1.44", features = ["full"] }
 
 [dev-dependencies]
-anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
 anyhow = "1.0"
-common-core = { path = "common/core" }
+anchor-lang = { git = "https://github.com/coral-xyz/anchor", rev = "b6b4f11" }
 bincode = "2.0"
 dotenv = "0.15"
 flate2 = "1.1"
-futures-util = "0.3"
 litesvm = "0.6"
 # litesvm-token = { git = "https://github.com/LiteSVM/litesvm", rev = "7e3d9a8" }
 serde = { version = "1.0", features = ["derive"] }

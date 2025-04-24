@@ -2,6 +2,9 @@ use anyhow::Result;
 use solana_client::nonblocking::{pubsub_client::PubsubClient, rpc_client::RpcClient};
 use solana_sdk::commitment_config::CommitmentConfig;
 
+// Re-export sqlx
+pub use sqlx;
+
 use sqlx::{
     Pool,
     sqlite::{Sqlite, SqlitePoolOptions},
