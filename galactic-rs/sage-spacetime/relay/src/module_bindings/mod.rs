@@ -7,6 +7,7 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 pub mod client_table;
 pub mod client_type;
 pub mod debug_reducer;
+pub mod fleet_pos_table;
 pub mod fleet_state_table;
 pub mod fleet_state_type;
 pub mod fleet_table;
@@ -18,11 +19,13 @@ pub mod message_table;
 pub mod message_type;
 pub mod move_subwarp_type;
 pub mod move_warp_type;
+pub mod sage_fleet_pos_type;
 pub mod sage_fleet_state_type;
 pub mod sage_fleet_type;
 pub mod sage_star_type;
 pub mod send_message_reducer;
 pub mod star_table;
+pub mod update_fleet_pos_reducer;
 pub mod update_fleet_reducer;
 pub mod update_fleet_state_reducer;
 pub mod update_star_reducer;
@@ -30,6 +33,7 @@ pub mod update_star_reducer;
 pub use client_table::*;
 pub use client_type::Client;
 pub use debug_reducer::{DebugCallbackId, debug, set_flags_for_debug};
+pub use fleet_pos_table::*;
 pub use fleet_state_table::*;
 pub use fleet_state_type::FleetState;
 pub use fleet_table::*;
@@ -45,11 +49,15 @@ pub use message_table::*;
 pub use message_type::Message;
 pub use move_subwarp_type::MoveSubwarp;
 pub use move_warp_type::MoveWarp;
+pub use sage_fleet_pos_type::SageFleetPos;
 pub use sage_fleet_state_type::SageFleetState;
 pub use sage_fleet_type::SageFleet;
 pub use sage_star_type::SageStar;
 pub use send_message_reducer::{SendMessageCallbackId, send_message, set_flags_for_send_message};
 pub use star_table::*;
+pub use update_fleet_pos_reducer::{
+    UpdateFleetPosCallbackId, set_flags_for_update_fleet_pos, update_fleet_pos,
+};
 pub use update_fleet_reducer::{UpdateFleetCallbackId, set_flags_for_update_fleet, update_fleet};
 pub use update_fleet_state_reducer::{
     UpdateFleetStateCallbackId, set_flags_for_update_fleet_state, update_fleet_state,
@@ -69,6 +77,7 @@ pub enum Reducer {
     IdentityDisconnected,
     SendMessage { text: String },
     UpdateFleet { fleet: SageFleet },
+    UpdateFleetPos { pos: SageFleetPos },
     UpdateFleetState { state: SageFleetState },
     UpdateStar { star: SageStar },
 }
@@ -85,6 +94,7 @@ impl __sdk::Reducer for Reducer {
             Reducer::IdentityDisconnected => "identity_disconnected",
             Reducer::SendMessage { .. } => "send_message",
             Reducer::UpdateFleet { .. } => "update_fleet",
+            Reducer::UpdateFleetPos { .. } => "update_fleet_pos",
             Reducer::UpdateFleetState { .. } => "update_fleet_state",
             Reducer::UpdateStar { .. } => "update_star",
         }
@@ -121,6 +131,10 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
                 )?
                 .into(),
             ),
+            "update_fleet_pos" => Ok(__sdk::parse_reducer_args::<
+                update_fleet_pos_reducer::UpdateFleetPosArgs,
+            >("update_fleet_pos", &value.args)?
+            .into()),
             "update_fleet_state" => Ok(__sdk::parse_reducer_args::<
                 update_fleet_state_reducer::UpdateFleetStateArgs,
             >("update_fleet_state", &value.args)?
@@ -148,6 +162,7 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
 pub struct DbUpdate {
     client: __sdk::TableUpdate<Client>,
     fleet: __sdk::TableUpdate<SageFleet>,
+    fleet_pos: __sdk::TableUpdate<SageFleetPos>,
     fleet_state: __sdk::TableUpdate<SageFleetState>,
     logged_out_client: __sdk::TableUpdate<Client>,
     message: __sdk::TableUpdate<Message>,
@@ -162,6 +177,9 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
             match &table_update.table_name[..] {
                 "client" => db_update.client = client_table::parse_table_update(table_update)?,
                 "fleet" => db_update.fleet = fleet_table::parse_table_update(table_update)?,
+                "fleet_pos" => {
+                    db_update.fleet_pos = fleet_pos_table::parse_table_update(table_update)?
+                }
                 "fleet_state" => {
                     db_update.fleet_state = fleet_state_table::parse_table_update(table_update)?
                 }
@@ -203,6 +221,9 @@ impl __sdk::DbUpdate for DbUpdate {
         diff.fleet = cache
             .apply_diff_to_table::<SageFleet>("fleet", &self.fleet)
             .with_updates_by_pk(|row| &row.pubkey);
+        diff.fleet_pos = cache
+            .apply_diff_to_table::<SageFleetPos>("fleet_pos", &self.fleet_pos)
+            .with_updates_by_pk(|row| &row.pubkey);
         diff.fleet_state = cache
             .apply_diff_to_table::<SageFleetState>("fleet_state", &self.fleet_state)
             .with_updates_by_pk(|row| &row.pubkey);
@@ -224,6 +245,7 @@ impl __sdk::DbUpdate for DbUpdate {
 pub struct AppliedDiff<'r> {
     client: __sdk::TableAppliedDiff<'r, Client>,
     fleet: __sdk::TableAppliedDiff<'r, SageFleet>,
+    fleet_pos: __sdk::TableAppliedDiff<'r, SageFleetPos>,
     fleet_state: __sdk::TableAppliedDiff<'r, SageFleetState>,
     logged_out_client: __sdk::TableAppliedDiff<'r, Client>,
     message: __sdk::TableAppliedDiff<'r, Message>,
@@ -242,6 +264,7 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
     ) {
         callbacks.invoke_table_row_callbacks::<Client>("client", &self.client, event);
         callbacks.invoke_table_row_callbacks::<SageFleet>("fleet", &self.fleet, event);
+        callbacks.invoke_table_row_callbacks::<SageFleetPos>("fleet_pos", &self.fleet_pos, event);
         callbacks.invoke_table_row_callbacks::<SageFleetState>(
             "fleet_state",
             &self.fleet_state,
@@ -831,6 +854,7 @@ impl __sdk::SpacetimeModule for RemoteModule {
     fn register_tables(client_cache: &mut __sdk::ClientCache<Self>) {
         client_table::register_table(client_cache);
         fleet_table::register_table(client_cache);
+        fleet_pos_table::register_table(client_cache);
         fleet_state_table::register_table(client_cache);
         logged_out_client_table::register_table(client_cache);
         message_table::register_table(client_cache);

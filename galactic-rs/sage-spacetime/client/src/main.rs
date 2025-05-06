@@ -1,4 +1,4 @@
-use spacetimedb_sdk::{DbContext, Error, Identity, Table, credentials};
+use spacetimedb_sdk::{DbContext, Error, Identity, Table, TableWithPrimaryKey, credentials};
 use tokio::signal;
 
 mod module_bindings;
@@ -39,6 +39,7 @@ async fn main() -> anyhow::Result<()> {
             "SELECT * FROM star",
             "SELECT * FROM fleet",
             "SELECT * FROM fleet_state",
+            "SELECT * FROM fleet_pos",
         ]);
 
     // ctx.reducers
@@ -46,10 +47,22 @@ async fn main() -> anyhow::Result<()> {
     //         dbg!(fleet);
     //     });
 
-    ctx.reducers
-        .on_update_fleet_state(|_ctx: &ReducerEventContext, state: &SageFleetState| {
-            dbg!(state);
+    // ctx.reducers
+    //     .on_update_fleet_state(|_ctx: &ReducerEventContext, state: &SageFleetState| {
+    //         dbg!(state);
+    //     });
+
+    ctx.db
+        .fleet_pos()
+        .on_insert(|_ctx: &EventContext, pos: &SageFleetPos| {
+            dbg!("INSERT", pos);
         });
+
+    ctx.db.fleet_pos().on_update(
+        |_ctx: &EventContext, old: &SageFleetPos, new: &SageFleetPos| {
+            dbg!("UPDATE", old, new);
+        },
+    );
 
     loop {
         tokio::select! {

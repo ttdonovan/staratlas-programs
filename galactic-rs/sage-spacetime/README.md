@@ -13,8 +13,6 @@ cargo run -p client
 
 ## Development
 
-example: https://github.com/ClockworkLabs/Blackholio
-
 ```
 just server-start
 # spacetime start
@@ -35,3 +33,11 @@ just generate
 ## Standalone
 
 https://spacetimedb.com/docs/deploying/spacetimedb-standalone
+
+## Examples
+
+* https://github.com/ClockworkLabs/Blackholio
+* https://github.com/GalaxyCr8r/solarance-beginnings/
+* https://github.com/Moreno-Gentili/space-vs-time
+* https://github.com/SeloSlav/vibe-coding-starter-pack-2d-multiplayer-survival
+* https://docs.rs/rstar/latest/rstar/primitives/struct.GeomWithData.html
