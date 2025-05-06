@@ -1,0 +1,10 @@
+server-start:
+    spacetime start
+
+server-publish:
+    spacetime delete sage-stdb
+    spacetime publish --server local --project-path server sage-stdb
+
+generate:
+    spacetime generate --lang rust --out-dir client/src/module_bindings --project-path server
+    spacetime generate --lang rust --out-dir relay/src/module_bindings --project-path server

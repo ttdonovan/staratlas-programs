@@ -1,12 +1,17 @@
 [package]
-name = "common-core"
+name = "relay"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 anchor-lang = { workspace = true }
 anyhow = { workspace = true }
+common-core = { workspace = true }
+dotenv = { workspace = true }
+futures-util = { workspace = true }
 solana-account-decoder = { workspace = true }
 solana-client = { workspace = true }
 solana-sdk = { workspace = true }
-sqlx = { workspace = true }
+spacetimedb-sdk = "1.1"
+staratlas-sage = { workspace = true }
+tokio = { workspace = true }

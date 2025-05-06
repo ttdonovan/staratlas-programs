@@ -8,8 +8,8 @@ publish = false
 members = [
     "common/*",
     "crates/*",
-    "galactic-rs/*",
     "galactic-rs/sage-game",
+    "galactic-rs/sage-spacetime/*",
     "programs/*",
 ]
 
