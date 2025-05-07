@@ -53,15 +53,17 @@ async fn main() -> anyhow::Result<()> {
         ..Default::default()
     };
 
-    let (mut accounts, unsubscriber) = client
+    let (mut accounts, accounts_unsubscriber) = client
         .program_subscribe(&SAGE_ID, Some(program_accounts_config))
         .await?;
+
+    let (mut slots, slots_unsubscriber) = client.slot_subscribe().await?;
 
     loop {
         tokio::select! {
             // Process Program account updates
-            account_option = accounts.next() => {
-                match account_option {
+            account_maybe = accounts.next() => {
+                match account_maybe {
                     Some(response) => {
                         let pubkey = response.value.pubkey;
                         if let  Some(data) = response.value.account.data.decode() {
@@ -139,6 +141,12 @@ async fn main() -> anyhow::Result<()> {
                     }
                 }
             }
+            // Process Program slot info
+            slot_info_maybe = slots.next() => {
+                if let Some(slot_info) = slot_info_maybe {
+                    ctx.reducers.update_config_slot(slot_info.slot)?;
+                }
+            }
             // Process Spacetimedb Websockets
             _ = ctx.run_async() => {}
             // Handel Ctrl+C signal
@@ -149,7 +157,8 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    unsubscriber().await;
+    accounts_unsubscriber().await;
+    slots_unsubscriber().await;
 
     Ok(())
 }

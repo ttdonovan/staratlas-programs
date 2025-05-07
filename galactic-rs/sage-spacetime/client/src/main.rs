@@ -36,6 +36,7 @@ async fn main() -> anyhow::Result<()> {
             println!("Subscription error: {:?}", error);
         })
         .subscribe([
+            "SELECT * FROM config",
             "SELECT * FROM star",
             "SELECT * FROM fleet",
             "SELECT * FROM fleet_state",
@@ -52,17 +53,28 @@ async fn main() -> anyhow::Result<()> {
     //         dbg!(state);
     //     });
 
-    ctx.db
-        .fleet_pos()
-        .on_insert(|_ctx: &EventContext, pos: &SageFleetPos| {
-            dbg!("INSERT", pos);
+    // ctx.db
+    //     .config()
+    //     .on_update(|_ctx: &EventContext, old: &Config, new: &Config| {
+    //         dbg!(old, new);
+    //     });
+
+    ctx.reducers
+        .on_update_config_slot(|_ctx: &ReducerEventContext, slot: &u64| {
+            dbg!(slot);
         });
 
-    ctx.db.fleet_pos().on_update(
-        |_ctx: &EventContext, old: &SageFleetPos, new: &SageFleetPos| {
-            dbg!("UPDATE", old, new);
-        },
-    );
+    // ctx.db
+    //     .fleet_pos()
+    //     .on_insert(|_ctx: &EventContext, pos: &SageFleetPos| {
+    //         dbg!("INSERT", pos);
+    //     });
+
+    // ctx.db.fleet_pos().on_update(
+    //     |_ctx: &EventContext, old: &SageFleetPos, new: &SageFleetPos| {
+    //         dbg!("UPDATE", old, new);
+    //     },
+    // );
 
     loop {
         tokio::select! {

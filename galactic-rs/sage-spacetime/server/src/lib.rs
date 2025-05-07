@@ -2,6 +2,13 @@ use spacetimedb::{reducer, table, Identity, ReducerContext, Table, Timestamp};
 
 pub mod sage;
 
+#[spacetimedb::table(name = config, public)]
+pub struct Config {
+    #[primary_key]
+    pub id: u32,
+    pub slot: u64,
+}
+
 #[table(name = client, public)]
 #[table(name = logged_out_client)]
 pub struct Client {
@@ -35,9 +42,19 @@ pub fn debug(ctx: &ReducerContext) {
     log::info!("This reducer was called by: {}", ctx.sender);
 }
 
+#[reducer]
+pub fn update_config_slot(ctx: &ReducerContext, slot: u64) {
+    if let Some(mut config) = ctx.db.config().id().find(0) {
+        config.slot = slot;
+        ctx.db.config().id().update(config);
+    }
+}
+
 #[reducer(init)]
-pub fn init(_ctx: &ReducerContext) {
+pub fn init(ctx: &ReducerContext) -> Result<(), String> {
     // Called when the module is initially published
+    ctx.db.config().try_insert(Config { id: 0, slot: 0 })?;
+    Ok(())
 }
 
 #[reducer(client_connected)]
