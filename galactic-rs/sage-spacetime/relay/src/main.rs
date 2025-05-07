@@ -9,7 +9,7 @@ use tokio::signal;
 use common_core::{get_program_accounts, solana_pubsub_client, solana_rpc_client};
 use staratlas_sage::{ID as SAGE_ID, state, ui};
 
-use relay::{
+use stdb_relay::{
     module_bindings::{self as stdb, *},
     spacetimedb_conn,
 };
@@ -75,13 +75,13 @@ async fn main() -> anyhow::Result<()> {
                                         ui::UiFleetState::Idle(idle) => {
                                             let state = Some(stdb::FleetState::Idle(stdb::Idle {
                                                 sector_x: idle.sector[0],
-                                                sector_y: idle.sector[0],
+                                                sector_y: idle.sector[1],
                                             }));
 
                                             let pos = Some(stdb::SageFleetPos {
                                                 pubkey: pubkey.clone(),
                                                 x: idle.sector[0],
-                                                y: idle.sector[0],
+                                                y: idle.sector[1],
                                             });
 
                                             (state, pos)

@@ -7,4 +7,5 @@ server-publish:
 
 generate:
     spacetime generate --lang rust --out-dir client/src/module_bindings --project-path server
+    spacetime generate --lang rust --out-dir game/src/module_bindings --project-path server
     spacetime generate --lang rust --out-dir relay/src/module_bindings --project-path server

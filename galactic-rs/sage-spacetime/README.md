@@ -7,8 +7,8 @@ spacetime init --lang rust server
 
 ```
 spacetime start
-cargo run -p relay
-cargo run -p client
+cargo run -p stdb-relay
+cargo run -p stdb-client
 ```
 
 ## Development
