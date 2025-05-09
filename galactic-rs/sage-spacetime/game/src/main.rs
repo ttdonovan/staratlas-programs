@@ -32,11 +32,12 @@ struct Viewport {
     x: i32,
     y: i32,
     size: i32,
+    margin: i32,
 }
 
 impl Viewport {
-    fn new(x: i32, y: i32, size: i32) -> Self {
-        Viewport { x, y, size }
+    fn new(x: i32, y: i32, size: i32, margin: i32) -> Self {
+        Viewport { x, y, size, margin }
     }
 }
 
@@ -50,7 +51,6 @@ async fn main() -> anyhow::Result<()> {
             move |_ctx: &DbConnection, identity: Identity, token: &str| {
                 let mut state = game_state_clone.write().unwrap();
                 state.identity = format!("{}", identity);
-                dbg!(&state.identity);
                 let _ = credentials::File::new(DB_NAME).save(token);
             },
         )
@@ -72,7 +72,11 @@ async fn main() -> anyhow::Result<()> {
         .on_error(|_ctx: &ErrorContext, error: Error| {
             println!("Subscription error: {:?}", error);
         })
-        .subscribe(["SELECT * FROM config", "SELECT * FROM fleet_pos"]);
+        .subscribe([
+            "SELECT * FROM config",
+            "SELECT * FROM player_viewport WHERE id = :sender",
+            "SELECT * FROM fleet_pos",
+        ]);
 
     let game_state_clone = game_state.clone();
     ctx.reducers
@@ -101,11 +105,11 @@ async fn main() -> anyhow::Result<()> {
         },
     );
 
-    ctx.db.player_viewport().on_update(
-        |_ctx: &EventContext, _old: &PlayerViewport, new: &PlayerViewport| {
-            dbg!(new);
-        },
-    );
+    // ctx.db.player_viewport().on_update(
+    //     |_ctx: &EventContext, _old: &PlayerViewport, new: &PlayerViewport| {
+    //         dbg!(new);
+    //     },
+    // );
 
     ctx.run_threaded();
 
@@ -119,9 +123,17 @@ async fn main() -> anyhow::Result<()> {
     let mut slot = 0;
     let mut fleet_positions = HashMap::new();
 
-    let mut viewport = Viewport::new(0, 0, 16); // 16x16 grid cells
-    ctx.reducers
-        .set_player_viewport(viewport.x, viewport.y, viewport.size)?;
+    let mut viewport = Viewport::new(0, 0, 16, 6); // 16x16 grid cells
+    let mut vp_margin_x = viewport.x - viewport.margin;
+    let mut vp_margin_y = viewport.y - viewport.margin;
+    let vp_margin_size = viewport.size + viewport.margin * 2;
+
+    ctx.reducers.set_player_viewport(
+        viewport.x as i64,
+        viewport.y as i64,
+        viewport.size as i64,
+        viewport.margin as i64,
+    )?;
 
     loop {
         if identeity.is_empty() {
@@ -160,8 +172,29 @@ async fn main() -> anyhow::Result<()> {
             viewport.y += 1;
         }
 
+        let crossed_left = viewport.x < vp_margin_x;
+        let crossed_right = viewport.x + viewport.size > vp_margin_x + vp_margin_size;
+        let crossed_top = viewport.y < vp_margin_y;
+        let crossed_bottom = viewport.y + viewport.size > vp_margin_y + vp_margin_size;
+        if crossed_left || crossed_right || crossed_top || crossed_bottom {
+            vp_margin_x = viewport.x - viewport.margin;
+            vp_margin_y = viewport.y - viewport.margin;
+
+            ctx.reducers.set_player_viewport(
+                viewport.x as i64,
+                viewport.y as i64,
+                viewport.size as i64,
+                viewport.margin as i64,
+            )?;
+        }
+
         viewport.x = viewport.x.clamp(-center_col, center_col - viewport.size);
         viewport.y = viewport.y.clamp(-center_row, center_row - viewport.size);
+
+        let vpm_screen_x = (center_col + vp_margin_x) as f32 * cell_size;
+        let vpm_screen_y = (center_row + vp_margin_y) as f32 * cell_size;
+        let vpm_size = vp_margin_size as f32 * cell_size;
+        draw_rectangle_lines(vpm_screen_x, vpm_screen_y, vpm_size, vpm_size, 2.0, GREEN);
 
         let vp_screen_x = (center_col + viewport.x) as f32 * cell_size;
         let vp_screen_y = (center_row + viewport.y) as f32 * cell_size;
@@ -182,7 +215,13 @@ async fn main() -> anyhow::Result<()> {
             };
         }
 
-        draw_text(&format!("ID: {}", identeity), 20.0, 20.0, 25.0, DARKPURPLE);
+        draw_text(
+            &format!("ClientID: {}", identeity),
+            20.0,
+            20.0,
+            25.0,
+            DARKPURPLE,
+        );
         draw_text(&format!("Slot: {}", slot), 20.0, 40.0, 25.0, DARKPURPLE);
         draw_text(
             &format!("Fleet (x, y): {}", fleet_positions.len()),

@@ -8,9 +8,10 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 #[sats(crate = __lib)]
 pub struct PlayerViewport {
     pub id: __sdk::Identity,
-    pub x: i32,
-    pub y: i32,
-    pub size: i32,
+    pub tl_x: i64,
+    pub tl_y: i64,
+    pub br_x: i64,
+    pub br_y: i64,
 }
 
 impl __sdk::InModule for PlayerViewport {

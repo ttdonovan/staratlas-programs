@@ -7,9 +7,10 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
 pub(super) struct SetPlayerViewportArgs {
-    pub x: i32,
-    pub y: i32,
-    pub size: i32,
+    pub x: i64,
+    pub y: i64,
+    pub size: i64,
+    pub margin: i64,
 }
 
 impl From<SetPlayerViewportArgs> for super::Reducer {
@@ -18,6 +19,7 @@ impl From<SetPlayerViewportArgs> for super::Reducer {
             x: args.x,
             y: args.y,
             size: args.size,
+            margin: args.margin,
         }
     }
 }
@@ -38,7 +40,7 @@ pub trait set_player_viewport {
     /// This method returns immediately, and errors only if we are unable to send the request.
     /// The reducer will run asynchronously in the future,
     ///  and its status can be observed by listening for [`Self::on_set_player_viewport`] callbacks.
-    fn set_player_viewport(&self, x: i32, y: i32, size: i32) -> __sdk::Result<()>;
+    fn set_player_viewport(&self, x: i64, y: i64, size: i64, margin: i64) -> __sdk::Result<()>;
     /// Register a callback to run whenever we are notified of an invocation of the reducer `set_player_viewport`.
     ///
     /// Callbacks should inspect the [`__sdk::ReducerEvent`] contained in the [`super::ReducerEventContext`]
@@ -48,7 +50,7 @@ pub trait set_player_viewport {
     /// to cancel the callback.
     fn on_set_player_viewport(
         &self,
-        callback: impl FnMut(&super::ReducerEventContext, &i32, &i32, &i32) + Send + 'static,
+        callback: impl FnMut(&super::ReducerEventContext, &i64, &i64, &i64, &i64) + Send + 'static,
     ) -> SetPlayerViewportCallbackId;
     /// Cancel a callback previously registered by [`Self::on_set_player_viewport`],
     /// causing it not to run in the future.
@@ -56,13 +58,15 @@ pub trait set_player_viewport {
 }
 
 impl set_player_viewport for super::RemoteReducers {
-    fn set_player_viewport(&self, x: i32, y: i32, size: i32) -> __sdk::Result<()> {
-        self.imp
-            .call_reducer("set_player_viewport", SetPlayerViewportArgs { x, y, size })
+    fn set_player_viewport(&self, x: i64, y: i64, size: i64, margin: i64) -> __sdk::Result<()> {
+        self.imp.call_reducer(
+            "set_player_viewport",
+            SetPlayerViewportArgs { x, y, size, margin },
+        )
     }
     fn on_set_player_viewport(
         &self,
-        mut callback: impl FnMut(&super::ReducerEventContext, &i32, &i32, &i32) + Send + 'static,
+        mut callback: impl FnMut(&super::ReducerEventContext, &i64, &i64, &i64, &i64) + Send + 'static,
     ) -> SetPlayerViewportCallbackId {
         SetPlayerViewportCallbackId(self.imp.on_reducer(
             "set_player_viewport",
@@ -70,7 +74,7 @@ impl set_player_viewport for super::RemoteReducers {
                 let super::ReducerEventContext {
                     event:
                         __sdk::ReducerEvent {
-                            reducer: super::Reducer::SetPlayerViewport { x, y, size },
+                            reducer: super::Reducer::SetPlayerViewport { x, y, size, margin },
                             ..
                         },
                     ..
@@ -78,7 +82,7 @@ impl set_player_viewport for super::RemoteReducers {
                 else {
                     unreachable!()
                 };
-                callback(ctx, x, y, size)
+                callback(ctx, x, y, size, margin)
             }),
         ))
     }
