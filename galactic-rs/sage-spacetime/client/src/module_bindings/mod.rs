@@ -21,11 +21,14 @@ pub mod message_table;
 pub mod message_type;
 pub mod move_subwarp_type;
 pub mod move_warp_type;
+pub mod player_viewport_table;
+pub mod player_viewport_type;
 pub mod sage_fleet_pos_type;
 pub mod sage_fleet_state_type;
 pub mod sage_fleet_type;
 pub mod sage_star_type;
 pub mod send_message_reducer;
+pub mod set_player_viewport_reducer;
 pub mod star_table;
 pub mod update_config_slot_reducer;
 pub mod update_fleet_pos_reducer;
@@ -54,11 +57,16 @@ pub use message_table::*;
 pub use message_type::Message;
 pub use move_subwarp_type::MoveSubwarp;
 pub use move_warp_type::MoveWarp;
+pub use player_viewport_table::*;
+pub use player_viewport_type::PlayerViewport;
 pub use sage_fleet_pos_type::SageFleetPos;
 pub use sage_fleet_state_type::SageFleetState;
 pub use sage_fleet_type::SageFleet;
 pub use sage_star_type::SageStar;
 pub use send_message_reducer::{SendMessageCallbackId, send_message, set_flags_for_send_message};
+pub use set_player_viewport_reducer::{
+    SetPlayerViewportCallbackId, set_flags_for_set_player_viewport, set_player_viewport,
+};
 pub use star_table::*;
 pub use update_config_slot_reducer::{
     UpdateConfigSlotCallbackId, set_flags_for_update_config_slot, update_config_slot,
@@ -84,6 +92,7 @@ pub enum Reducer {
     IdentityConnected,
     IdentityDisconnected,
     SendMessage { text: String },
+    SetPlayerViewport { x: i32, y: i32, size: i32 },
     UpdateConfigSlot { slot: u64 },
     UpdateFleet { fleet: SageFleet },
     UpdateFleetPos { pos: SageFleetPos },
@@ -102,6 +111,7 @@ impl __sdk::Reducer for Reducer {
             Reducer::IdentityConnected => "identity_connected",
             Reducer::IdentityDisconnected => "identity_disconnected",
             Reducer::SendMessage { .. } => "send_message",
+            Reducer::SetPlayerViewport { .. } => "set_player_viewport",
             Reducer::UpdateConfigSlot { .. } => "update_config_slot",
             Reducer::UpdateFleet { .. } => "update_fleet",
             Reducer::UpdateFleetPos { .. } => "update_fleet_pos",
@@ -134,6 +144,10 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
                 )?
                 .into(),
             ),
+            "set_player_viewport" => Ok(__sdk::parse_reducer_args::<
+                set_player_viewport_reducer::SetPlayerViewportArgs,
+            >("set_player_viewport", &value.args)?
+            .into()),
             "update_config_slot" => Ok(__sdk::parse_reducer_args::<
                 update_config_slot_reducer::UpdateConfigSlotArgs,
             >("update_config_slot", &value.args)?
@@ -181,6 +195,7 @@ pub struct DbUpdate {
     fleet_state: __sdk::TableUpdate<SageFleetState>,
     logged_out_client: __sdk::TableUpdate<Client>,
     message: __sdk::TableUpdate<Message>,
+    player_viewport: __sdk::TableUpdate<PlayerViewport>,
     star: __sdk::TableUpdate<SageStar>,
 }
 
@@ -204,6 +219,10 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
                         logged_out_client_table::parse_table_update(table_update)?
                 }
                 "message" => db_update.message = message_table::parse_table_update(table_update)?,
+                "player_viewport" => {
+                    db_update.player_viewport =
+                        player_viewport_table::parse_table_update(table_update)?
+                }
                 "star" => db_update.star = star_table::parse_table_update(table_update)?,
 
                 unknown => {
@@ -250,6 +269,9 @@ impl __sdk::DbUpdate for DbUpdate {
             .apply_diff_to_table::<Client>("logged_out_client", &self.logged_out_client)
             .with_updates_by_pk(|row| &row.id);
         diff.message = cache.apply_diff_to_table::<Message>("message", &self.message);
+        diff.player_viewport = cache
+            .apply_diff_to_table::<PlayerViewport>("player_viewport", &self.player_viewport)
+            .with_updates_by_pk(|row| &row.id);
         diff.star = cache
             .apply_diff_to_table::<SageStar>("star", &self.star)
             .with_updates_by_pk(|row| &row.pubkey);
@@ -269,6 +291,7 @@ pub struct AppliedDiff<'r> {
     fleet_state: __sdk::TableAppliedDiff<'r, SageFleetState>,
     logged_out_client: __sdk::TableAppliedDiff<'r, Client>,
     message: __sdk::TableAppliedDiff<'r, Message>,
+    player_viewport: __sdk::TableAppliedDiff<'r, PlayerViewport>,
     star: __sdk::TableAppliedDiff<'r, SageStar>,
 }
 
@@ -297,6 +320,11 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
             event,
         );
         callbacks.invoke_table_row_callbacks::<Message>("message", &self.message, event);
+        callbacks.invoke_table_row_callbacks::<PlayerViewport>(
+            "player_viewport",
+            &self.player_viewport,
+            event,
+        );
         callbacks.invoke_table_row_callbacks::<SageStar>("star", &self.star, event);
     }
 }
@@ -880,6 +908,7 @@ impl __sdk::SpacetimeModule for RemoteModule {
         fleet_state_table::register_table(client_cache);
         logged_out_client_table::register_table(client_cache);
         message_table::register_table(client_cache);
+        player_viewport_table::register_table(client_cache);
         star_table::register_table(client_cache);
     }
 }

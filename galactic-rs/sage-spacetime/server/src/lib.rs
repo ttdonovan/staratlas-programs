@@ -1,5 +1,6 @@
 use spacetimedb::{reducer, table, Identity, ReducerContext, Table, Timestamp};
 
+pub mod player;
 pub mod sage;
 
 #[spacetimedb::table(name = config, public)]

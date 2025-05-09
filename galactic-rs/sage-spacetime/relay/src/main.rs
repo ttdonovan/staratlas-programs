@@ -71,44 +71,32 @@ async fn main() -> anyhow::Result<()> {
                                 state::Fleet::DISCRIMINATOR => {
                                     let mut bytes = data.as_slice();
                                     let fleet = ui::UiFleet::deserialize_reader(&mut bytes)?;
-                                    let (state, pos) = match fleet.state {
+                                    let state = match fleet.state {
                                         ui::UiFleetState::Idle(idle) => {
-                                            let state = Some(stdb::FleetState::Idle(stdb::Idle {
+                                            Some(stdb::FleetState::Idle(stdb::Idle {
                                                 sector_x: idle.sector[0],
                                                 sector_y: idle.sector[1],
-                                            }));
-
-                                            let pos = Some(stdb::SageFleetPos {
-                                                pubkey: pubkey.clone(),
-                                                x: idle.sector[0],
-                                                y: idle.sector[1],
-                                            });
-
-                                            (state, pos)
+                                            }))
                                         }
                                         ui::UiFleetState::MoveWarp(move_warp) => {
-                                           let state = Some(stdb::FleetState::MoveWarp(stdb::MoveWarp {
-                                               from_sector_x: move_warp.from_sector[0],
-                                               from_sector_y: move_warp.from_sector[1],
-                                               to_sector_x: move_warp.to_sector[0],
-                                               to_sector_y: move_warp.to_sector[1],
-                                           }));
-
-                                           (state, None)
+                                            Some(stdb::FleetState::MoveWarp(stdb::MoveWarp {
+                                                from_sector_x: move_warp.from_sector[0],
+                                                from_sector_y: move_warp.from_sector[1],
+                                                to_sector_x: move_warp.to_sector[0],
+                                                to_sector_y: move_warp.to_sector[1],
+                                            }))
                                         }
                                         ui::UiFleetState::MoveSubwarp(move_subwarp) => {
-                                            let state = Some(stdb::FleetState::MoveSubwarp(stdb::MoveSubwarp {
+                                            Some(stdb::FleetState::MoveSubwarp(stdb::MoveSubwarp {
                                                 from_sector_x: move_subwarp.from_sector[0],
                                                 from_sector_y: move_subwarp.from_sector[1],
                                                 to_sector_x: move_subwarp.to_sector[0],
                                                 to_sector_y: move_subwarp.to_sector[1],
-                                            }));
-
-                                            (state, None)
+                                            }))
                                         }
                                         _ => {
                                             // dbg!(fleet.state);
-                                            (None, None)
+                                            None
                                         }
                                     };
 
@@ -123,10 +111,6 @@ async fn main() -> anyhow::Result<()> {
                                             pubkey: pubkey,
                                             state,
                                         })?;
-                                    }
-
-                                    if let Some(pos) = pos {
-                                        ctx.reducers.update_fleet_pos(pos)?;
                                     }
                                 }
                                 _ => {

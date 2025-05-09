@@ -63,7 +63,37 @@ pub fn update_fleet(ctx: &ReducerContext, fleet: SageFleet) {
 
 #[reducer]
 pub fn update_fleet_state(ctx: &ReducerContext, state: SageFleetState) {
-    if let Some(_found) = ctx.db.fleet_state().pubkey().find(&state.pubkey) {
+    if let Some(found) = ctx.db.fleet_state().pubkey().find(&state.pubkey) {
+        match &found.state {
+            FleetState::MoveWarp(_) => {
+                // todo! remove as "movable"
+            }
+            FleetState::MoveSubwarp(_) => {
+                // todo! remove as "moveable"
+            }
+            _ => {}
+        }
+
+        match &state.state {
+            FleetState::Idle(idle) => {
+                update_fleet_pos(
+                    ctx,
+                    SageFleetPos {
+                        pubkey: state.pubkey.clone(),
+                        x: idle.sector_x,
+                        y: idle.sector_y,
+                    },
+                );
+            }
+            FleetState::MoveWarp(_) => {
+                // todo! add as "movable"
+            }
+            FleetState::MoveSubwarp(_) => {
+                // todo! add as "movable"
+            }
+            _ => {}
+        }
+
         ctx.db.fleet_state().pubkey().update(state);
     } else {
         ctx.db.fleet_state().insert(state);

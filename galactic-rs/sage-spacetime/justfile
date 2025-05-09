@@ -9,3 +9,9 @@ generate:
     spacetime generate --lang rust --out-dir client/src/module_bindings --project-path server
     spacetime generate --lang rust --out-dir game/src/module_bindings --project-path server
     spacetime generate --lang rust --out-dir relay/src/module_bindings --project-path server
+
+run-relay:
+    cargo run -p stdb-relay
+
+run-game:
+    cargo run -p stdb-game
