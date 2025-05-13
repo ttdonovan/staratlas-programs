@@ -1,5 +1,6 @@
 use instant::{Duration, Instant};
 use macroquad::prelude::*;
+use shipyard::{Component, EntityId, IntoIter, View, World};
 use spacetimedb_sdk::{DbContext, Error, Identity, Table, TableWithPrimaryKey, credentials};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -12,10 +13,25 @@ const DB_NAME: &str = "sage-stdb";
 
 const FPS: f64 = 30.0;
 
+#[derive(Component)]
+struct Pubkey(String);
+
+#[derive(Component)]
+struct Pos(f32, f32);
+
+#[derive(Component)]
+struct Warp {
+    from_sector: [i64; 2],
+    to_sector: [i64; 2],
+    slot_start: u64,
+    slot_finish: u64,
+}
+
 struct GameState {
     identity: String,
     slot: u64,
-    fleet_positions: HashMap<String, (f32, f32)>,
+    world: World,
+    pubkey_to_entity: HashMap<String, EntityId>,
 }
 
 impl GameState {
@@ -23,7 +39,18 @@ impl GameState {
         GameState {
             identity: String::new(),
             slot: 0,
-            fleet_positions: HashMap::new(),
+            world: World::new(),
+            pubkey_to_entity: HashMap::new(),
+        }
+    }
+
+    fn world_entity(&mut self, pubkey: &str) -> EntityId {
+        if let Some(&entity) = self.pubkey_to_entity.get(pubkey) {
+            entity
+        } else {
+            let entity = self.world.add_entity((Pubkey(pubkey.to_string()),));
+            self.pubkey_to_entity.insert(pubkey.to_string(), entity);
+            entity
         }
     }
 }
@@ -92,9 +119,10 @@ async fn main() -> anyhow::Result<()> {
         .fleet_pos()
         .on_insert(move |_ctx: &EventContext, pos: &SageFleetPos| {
             let mut state = game_state_clone.write().unwrap();
+            let id = state.world_entity(&pos.pubkey);
             state
-                .fleet_positions
-                .insert(pos.pubkey.to_string(), (pos.x as f32, pos.y as f32));
+                .world
+                .add_component(id, Pos(pos.x as f32, pos.y as f32));
         });
 
     let game_state_clone = game_state.clone();
@@ -102,21 +130,35 @@ async fn main() -> anyhow::Result<()> {
         .fleet_pos()
         .on_delete(move |_ctx: &EventContext, pos: &SageFleetPos| {
             let mut state = game_state_clone.write().unwrap();
-            state.fleet_positions.remove_entry(&pos.pubkey);
+            let id = state.world_entity(&pos.pubkey);
+            state.world.remove::<Pos>(id);
         });
 
     // kinetic fleet position
-    // let game_state_clone = game_state.clone();
+    let game_state_clone = game_state.clone();
     ctx.db
         .fleet_warping()
         .on_insert(move |_ctx: &EventContext, warping: &SageFleetWarping| {
-            println!("INSERT: {:?}", &warping);
+            let mut state = game_state_clone.write().unwrap();
+            let id = state.world_entity(&warping.pubkey);
+            state.world.add_component(
+                id,
+                Warp {
+                    from_sector: [warping.from_sector_x, warping.from_sector_y],
+                    to_sector: [warping.to_sector_x, warping.to_sector_y],
+                    slot_start: warping.slot_start,
+                    slot_finish: warping.slot_finish,
+                },
+            );
         });
 
+    let game_state_clone = game_state.clone();
     ctx.db
         .fleet_warping()
         .on_delete(move |_ctx: &EventContext, warping: &SageFleetWarping| {
-            println!("DELETE: {:?}", &warping);
+            let mut state = game_state_clone.write().unwrap();
+            let id = state.world_entity(&warping.pubkey);
+            state.world.remove::<Warp>(id);
         });
 
     // ctx.db.player_viewport().on_update(
@@ -135,7 +177,6 @@ async fn main() -> anyhow::Result<()> {
         state.identity.clone()
     };
     let mut slot = 0;
-    let mut fleet_positions = HashMap::new();
 
     let mut viewport = Viewport::new(0, 0, 16, 6); // 16x16 grid cells
     let mut vp_margin_x = viewport.x - viewport.margin;
@@ -223,9 +264,9 @@ async fn main() -> anyhow::Result<()> {
         while accumulator.as_secs_f64() > fps_delta {
             accumulator = accumulator.saturating_sub(Duration::from_secs_f64(fps_delta));
 
-            (slot, fleet_positions) = {
+            slot = {
                 let state = game_state.read().unwrap();
-                (state.slot, state.fleet_positions.clone())
+                state.slot
             };
         }
 
@@ -237,18 +278,40 @@ async fn main() -> anyhow::Result<()> {
             DARKPURPLE,
         );
         draw_text(&format!("Slot: {}", slot), 20.0, 40.0, 25.0, DARKPURPLE);
+
+        let fleet_count = {
+            let state = game_state.read().unwrap();
+            state.world.run(|positions: View<Pos>| positions.len())
+        };
         draw_text(
-            &format!("Fleet (x, y): {}", fleet_positions.len()),
+            &format!("Fleet (x, y): {}", fleet_count),
             20.0,
             60.0,
             25.0,
             DARKPURPLE,
         );
 
-        for (_fleet_id, (grid_x, grid_y)) in fleet_positions.iter() {
-            let screen_x = (center_col + *grid_x as i32) as f32 * cell_size + cell_size / 2.0;
-            let screen_y = (center_row + *grid_y as i32) as f32 * cell_size + cell_size / 2.0;
-            draw_circle(screen_x, screen_y, 4.0, BLUE);
+        let warping_count = {
+            let state = game_state.read().unwrap();
+            state.world.run(|warping: View<Warp>| warping.len())
+        };
+        draw_text(
+            &format!("Fleet (warping): {}", warping_count),
+            20.0,
+            80.0,
+            25.0,
+            DARKPURPLE,
+        );
+
+        {
+            let state = game_state.read().unwrap();
+            state.world.run(|v_pos: View<Pos>| {
+                for pos in (&v_pos).iter() {
+                    let screen_x = (center_col + pos.0 as i32) as f32 * cell_size + cell_size / 2.0;
+                    let screen_y = (center_row + pos.1 as i32) as f32 * cell_size + cell_size / 2.0;
+                    draw_circle(screen_x, screen_y, 4.0, BLUE);
+                }
+            });
         }
 
         next_frame().await;
