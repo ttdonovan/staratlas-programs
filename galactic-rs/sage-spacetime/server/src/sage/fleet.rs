@@ -20,6 +20,8 @@ pub struct MoveWarp {
     pub from_sector_y: i64,
     pub to_sector_x: i64,
     pub to_sector_y: i64,
+    pub warp_start: i64,
+    pub warp_finish: i64,
 }
 
 #[derive(SpacetimeType)]
@@ -28,6 +30,8 @@ pub struct MoveSubwarp {
     pub from_sector_y: i64,
     pub to_sector_x: i64,
     pub to_sector_y: i64,
+    pub depature_time: i64,
+    pub arrival_time: i64,
 }
 
 #[derive(SpacetimeType)]
@@ -42,6 +46,18 @@ pub struct SageFleetState {
     #[primary_key]
     pub pubkey: String,
     pub state: FleetState,
+}
+
+#[table(name = fleet_warping, public)]
+pub struct SageFleetWarping {
+    #[primary_key]
+    pub pubkey: String,
+    pub from_sector_x: i64,
+    pub from_sector_y: i64,
+    pub to_sector_x: i64,
+    pub to_sector_y: i64,
+    pub slot_start: u64,
+    pub slot_finish: u64,
 }
 
 #[table(name = fleet_pos, public)]
@@ -66,10 +82,10 @@ pub fn update_fleet_state(ctx: &ReducerContext, state: SageFleetState) {
     if let Some(found) = ctx.db.fleet_state().pubkey().find(&state.pubkey) {
         match &found.state {
             FleetState::MoveWarp(_) => {
-                // todo! remove as "movable"
+                ctx.db.fleet_warping().pubkey().delete(&state.pubkey);
             }
             FleetState::MoveSubwarp(_) => {
-                // todo! remove as "moveable"
+                ctx.db.fleet_warping().pubkey().delete(&state.pubkey);
             }
             _ => {}
         }
@@ -85,11 +101,29 @@ pub fn update_fleet_state(ctx: &ReducerContext, state: SageFleetState) {
                     },
                 );
             }
-            FleetState::MoveWarp(_) => {
-                // todo! add as "movable"
+            FleetState::MoveWarp(move_warp) => {
+                ctx.db.fleet_pos().pubkey().delete(&state.pubkey);
+                ctx.db.fleet_warping().insert(SageFleetWarping {
+                    pubkey: state.pubkey.clone(),
+                    from_sector_x: move_warp.from_sector_x,
+                    from_sector_y: move_warp.from_sector_y,
+                    to_sector_x: move_warp.to_sector_x,
+                    to_sector_y: move_warp.to_sector_y,
+                    slot_start: move_warp.warp_start as u64,
+                    slot_finish: move_warp.warp_finish as u64,
+                });
             }
-            FleetState::MoveSubwarp(_) => {
-                // todo! add as "movable"
+            FleetState::MoveSubwarp(move_subwarp) => {
+                ctx.db.fleet_pos().pubkey().delete(&state.pubkey);
+                ctx.db.fleet_warping().insert(SageFleetWarping {
+                    pubkey: state.pubkey.clone(),
+                    from_sector_x: move_subwarp.from_sector_x,
+                    from_sector_y: move_subwarp.from_sector_y,
+                    to_sector_x: move_subwarp.to_sector_x,
+                    to_sector_y: move_subwarp.to_sector_y,
+                    slot_start: move_subwarp.depature_time as u64,
+                    slot_finish: move_subwarp.arrival_time as u64,
+                });
             }
             _ => {}
         }

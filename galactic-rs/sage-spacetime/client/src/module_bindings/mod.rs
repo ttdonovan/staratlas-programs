@@ -9,11 +9,11 @@ pub mod client_type;
 pub mod config_table;
 pub mod config_type;
 pub mod debug_reducer;
-pub mod filter_fleet_pos_table;
 pub mod fleet_pos_table;
 pub mod fleet_state_table;
 pub mod fleet_state_type;
 pub mod fleet_table;
+pub mod fleet_warping_table;
 pub mod identity_connected_reducer;
 pub mod identity_disconnected_reducer;
 pub mod idle_type;
@@ -27,6 +27,7 @@ pub mod player_viewport_type;
 pub mod sage_fleet_pos_type;
 pub mod sage_fleet_state_type;
 pub mod sage_fleet_type;
+pub mod sage_fleet_warping_type;
 pub mod sage_star_type;
 pub mod send_message_reducer;
 pub mod set_player_viewport_reducer;
@@ -42,11 +43,11 @@ pub use client_type::Client;
 pub use config_table::*;
 pub use config_type::Config;
 pub use debug_reducer::{DebugCallbackId, debug, set_flags_for_debug};
-pub use filter_fleet_pos_table::*;
 pub use fleet_pos_table::*;
 pub use fleet_state_table::*;
 pub use fleet_state_type::FleetState;
 pub use fleet_table::*;
+pub use fleet_warping_table::*;
 pub use identity_connected_reducer::{
     IdentityConnectedCallbackId, identity_connected, set_flags_for_identity_connected,
 };
@@ -64,6 +65,7 @@ pub use player_viewport_type::PlayerViewport;
 pub use sage_fleet_pos_type::SageFleetPos;
 pub use sage_fleet_state_type::SageFleetState;
 pub use sage_fleet_type::SageFleet;
+pub use sage_fleet_warping_type::SageFleetWarping;
 pub use sage_star_type::SageStar;
 pub use send_message_reducer::{SendMessageCallbackId, send_message, set_flags_for_send_message};
 pub use set_player_viewport_reducer::{
@@ -209,10 +211,10 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
 pub struct DbUpdate {
     client: __sdk::TableUpdate<Client>,
     config: __sdk::TableUpdate<Config>,
-    filter_fleet_pos: __sdk::TableUpdate<SageFleetPos>,
     fleet: __sdk::TableUpdate<SageFleet>,
     fleet_pos: __sdk::TableUpdate<SageFleetPos>,
     fleet_state: __sdk::TableUpdate<SageFleetState>,
+    fleet_warping: __sdk::TableUpdate<SageFleetWarping>,
     logged_out_client: __sdk::TableUpdate<Client>,
     message: __sdk::TableUpdate<Message>,
     player_viewport: __sdk::TableUpdate<PlayerViewport>,
@@ -227,16 +229,15 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
             match &table_update.table_name[..] {
                 "client" => db_update.client = client_table::parse_table_update(table_update)?,
                 "config" => db_update.config = config_table::parse_table_update(table_update)?,
-                "filter_fleet_pos" => {
-                    db_update.filter_fleet_pos =
-                        filter_fleet_pos_table::parse_table_update(table_update)?
-                }
                 "fleet" => db_update.fleet = fleet_table::parse_table_update(table_update)?,
                 "fleet_pos" => {
                     db_update.fleet_pos = fleet_pos_table::parse_table_update(table_update)?
                 }
                 "fleet_state" => {
                     db_update.fleet_state = fleet_state_table::parse_table_update(table_update)?
+                }
+                "fleet_warping" => {
+                    db_update.fleet_warping = fleet_warping_table::parse_table_update(table_update)?
                 }
                 "logged_out_client" => {
                     db_update.logged_out_client =
@@ -280,9 +281,6 @@ impl __sdk::DbUpdate for DbUpdate {
         diff.config = cache
             .apply_diff_to_table::<Config>("config", &self.config)
             .with_updates_by_pk(|row| &row.id);
-        diff.filter_fleet_pos = cache
-            .apply_diff_to_table::<SageFleetPos>("filter_fleet_pos", &self.filter_fleet_pos)
-            .with_updates_by_pk(|row| &row.pubkey);
         diff.fleet = cache
             .apply_diff_to_table::<SageFleet>("fleet", &self.fleet)
             .with_updates_by_pk(|row| &row.pubkey);
@@ -291,6 +289,9 @@ impl __sdk::DbUpdate for DbUpdate {
             .with_updates_by_pk(|row| &row.pubkey);
         diff.fleet_state = cache
             .apply_diff_to_table::<SageFleetState>("fleet_state", &self.fleet_state)
+            .with_updates_by_pk(|row| &row.pubkey);
+        diff.fleet_warping = cache
+            .apply_diff_to_table::<SageFleetWarping>("fleet_warping", &self.fleet_warping)
             .with_updates_by_pk(|row| &row.pubkey);
         diff.logged_out_client = cache
             .apply_diff_to_table::<Client>("logged_out_client", &self.logged_out_client)
@@ -313,10 +314,10 @@ impl __sdk::DbUpdate for DbUpdate {
 pub struct AppliedDiff<'r> {
     client: __sdk::TableAppliedDiff<'r, Client>,
     config: __sdk::TableAppliedDiff<'r, Config>,
-    filter_fleet_pos: __sdk::TableAppliedDiff<'r, SageFleetPos>,
     fleet: __sdk::TableAppliedDiff<'r, SageFleet>,
     fleet_pos: __sdk::TableAppliedDiff<'r, SageFleetPos>,
     fleet_state: __sdk::TableAppliedDiff<'r, SageFleetState>,
+    fleet_warping: __sdk::TableAppliedDiff<'r, SageFleetWarping>,
     logged_out_client: __sdk::TableAppliedDiff<'r, Client>,
     message: __sdk::TableAppliedDiff<'r, Message>,
     player_viewport: __sdk::TableAppliedDiff<'r, PlayerViewport>,
@@ -335,16 +336,16 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
     ) {
         callbacks.invoke_table_row_callbacks::<Client>("client", &self.client, event);
         callbacks.invoke_table_row_callbacks::<Config>("config", &self.config, event);
-        callbacks.invoke_table_row_callbacks::<SageFleetPos>(
-            "filter_fleet_pos",
-            &self.filter_fleet_pos,
-            event,
-        );
         callbacks.invoke_table_row_callbacks::<SageFleet>("fleet", &self.fleet, event);
         callbacks.invoke_table_row_callbacks::<SageFleetPos>("fleet_pos", &self.fleet_pos, event);
         callbacks.invoke_table_row_callbacks::<SageFleetState>(
             "fleet_state",
             &self.fleet_state,
+            event,
+        );
+        callbacks.invoke_table_row_callbacks::<SageFleetWarping>(
+            "fleet_warping",
+            &self.fleet_warping,
             event,
         );
         callbacks.invoke_table_row_callbacks::<Client>(
@@ -936,10 +937,10 @@ impl __sdk::SpacetimeModule for RemoteModule {
     fn register_tables(client_cache: &mut __sdk::ClientCache<Self>) {
         client_table::register_table(client_cache);
         config_table::register_table(client_cache);
-        filter_fleet_pos_table::register_table(client_cache);
         fleet_table::register_table(client_cache);
         fleet_pos_table::register_table(client_cache);
         fleet_state_table::register_table(client_cache);
+        fleet_warping_table::register_table(client_cache);
         logged_out_client_table::register_table(client_cache);
         message_table::register_table(client_cache);
         player_viewport_table::register_table(client_cache);

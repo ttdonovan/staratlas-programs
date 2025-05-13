@@ -84,6 +84,8 @@ async fn main() -> anyhow::Result<()> {
                                                 from_sector_y: move_warp.from_sector[1],
                                                 to_sector_x: move_warp.to_sector[0],
                                                 to_sector_y: move_warp.to_sector[1],
+                                                warp_start: move_warp.warp_start,
+                                                warp_finish: move_warp.warp_finish,
                                             }))
                                         }
                                         ui::UiFleetState::MoveSubwarp(move_subwarp) => {
@@ -92,6 +94,8 @@ async fn main() -> anyhow::Result<()> {
                                                 from_sector_y: move_subwarp.from_sector[1],
                                                 to_sector_x: move_subwarp.to_sector[0],
                                                 to_sector_y: move_subwarp.to_sector[1],
+                                                depature_time: move_subwarp.departure_time,
+                                                arrival_time: move_subwarp.arrival_time,
                                             }))
                                         }
                                         _ => {

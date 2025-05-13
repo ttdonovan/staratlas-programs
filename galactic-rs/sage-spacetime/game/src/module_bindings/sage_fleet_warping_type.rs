@@ -6,15 +6,16 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
-pub struct MoveWarp {
+pub struct SageFleetWarping {
+    pub pubkey: String,
     pub from_sector_x: i64,
     pub from_sector_y: i64,
     pub to_sector_x: i64,
     pub to_sector_y: i64,
-    pub warp_start: i64,
-    pub warp_finish: i64,
+    pub slot_start: u64,
+    pub slot_finish: u64,
 }
 
-impl __sdk::InModule for MoveWarp {
+impl __sdk::InModule for SageFleetWarping {
     type Module = super::RemoteModule;
 }

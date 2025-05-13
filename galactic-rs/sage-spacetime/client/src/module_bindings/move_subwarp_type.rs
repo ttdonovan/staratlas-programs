@@ -11,6 +11,8 @@ pub struct MoveSubwarp {
     pub from_sector_y: i64,
     pub to_sector_x: i64,
     pub to_sector_y: i64,
+    pub depature_time: i64,
+    pub arrival_time: i64,
 }
 
 impl __sdk::InModule for MoveSubwarp {

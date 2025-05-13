@@ -76,6 +76,7 @@ async fn main() -> anyhow::Result<()> {
             "SELECT * FROM config",
             "SELECT * FROM player_viewport WHERE id = :sender",
             "SELECT * FROM fleet_pos",
+            "SELECT * FROM fleet_warping",
         ]);
 
     let game_state_clone = game_state.clone();
@@ -85,6 +86,7 @@ async fn main() -> anyhow::Result<()> {
             state.slot = *slot;
         });
 
+    // static fleet positions
     let game_state_clone = game_state.clone();
     ctx.db
         .fleet_pos()
@@ -96,14 +98,26 @@ async fn main() -> anyhow::Result<()> {
         });
 
     let game_state_clone = game_state.clone();
-    ctx.db.fleet_pos().on_update(
-        move |_ctx: &EventContext, _old: &SageFleetPos, new: &SageFleetPos| {
+    ctx.db
+        .fleet_pos()
+        .on_delete(move |_ctx: &EventContext, pos: &SageFleetPos| {
             let mut state = game_state_clone.write().unwrap();
-            state
-                .fleet_positions
-                .insert(new.pubkey.to_string(), (new.x as f32, new.y as f32));
-        },
-    );
+            state.fleet_positions.remove_entry(&pos.pubkey);
+        });
+
+    // kinetic fleet position
+    // let game_state_clone = game_state.clone();
+    ctx.db
+        .fleet_warping()
+        .on_insert(move |_ctx: &EventContext, warping: &SageFleetWarping| {
+            println!("INSERT: {:?}", &warping);
+        });
+
+    ctx.db
+        .fleet_warping()
+        .on_delete(move |_ctx: &EventContext, warping: &SageFleetWarping| {
+            println!("DELETE: {:?}", &warping);
+        });
 
     // ctx.db.player_viewport().on_update(
     //     |_ctx: &EventContext, _old: &PlayerViewport, new: &PlayerViewport| {

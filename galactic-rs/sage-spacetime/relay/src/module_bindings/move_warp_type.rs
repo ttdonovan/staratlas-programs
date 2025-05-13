@@ -11,6 +11,8 @@ pub struct MoveWarp {
     pub from_sector_y: i64,
     pub to_sector_x: i64,
     pub to_sector_y: i64,
+    pub warp_start: i64,
+    pub warp_finish: i64,
 }
 
 impl __sdk::InModule for MoveWarp {
