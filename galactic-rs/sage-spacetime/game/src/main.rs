@@ -314,6 +314,47 @@ async fn main() -> anyhow::Result<()> {
             });
         }
 
+        {
+            let state = game_state.read().unwrap();
+            let current_slot = state.slot;
+
+            state.world.run(|warpings: View<Warp>| {
+                for warp in (&warpings).iter() {
+                    let total = (warp.slot_finish as f32 - warp.slot_start as f32).max(1.0);
+                    let elapsed = (current_slot as f32 - warp.slot_start as f32).clamp(0.0, total);
+                    let t = (elapsed / total).clamp(0.0, 1.0);
+
+                    let cur_x = warp.from_sector[0] as f32
+                        + (warp.to_sector[0] - warp.to_sector[0]) as f32 * t;
+                    let cur_y = warp.from_sector[1] as f32
+                        + (warp.to_sector[1] - warp.to_sector[1]) as f32 * t;
+
+                    let screen_x = (center_col + cur_x as i32) as f32 * cell_size + cell_size / 2.0;
+                    let screen_y = (center_row + cur_y as i32) as f32 * cell_size + cell_size / 2.0;
+                    draw_circle(screen_x, screen_y, 4.0, Color::new(0.2, 0.2, 1.0, 0.7)); // blue, mostly opaque
+
+                    let from_screen_x = (center_col + warp.from_sector[0] as i32) as f32
+                        * cell_size
+                        + cell_size / 2.0;
+                    let from_screen_y = (center_row + warp.from_sector[1] as i32) as f32
+                        * cell_size
+                        + cell_size / 2.0;
+                    let to_screen_x = (center_col + warp.to_sector[0] as i32) as f32 * cell_size
+                        + cell_size / 2.0;
+                    let to_screen_y = (center_row + warp.to_sector[1] as i32) as f32 * cell_size
+                        + cell_size / 2.0;
+                    draw_line(
+                        from_screen_x,
+                        from_screen_y,
+                        to_screen_x,
+                        to_screen_y,
+                        2.0,
+                        Color::new(0.2, 0.2, 1.0, 0.2),
+                    );
+                }
+            });
+        }
+
         next_frame().await;
     }
 }
